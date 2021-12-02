@@ -60,7 +60,7 @@ bool CollisionDetection::RayBoxIntersection(const Ray&r, const Vector3& boxPos, 
 	Vector3 tVals(-1, -1, -1);
 
 	for (int i = 0; i < 3; i++) { //Get best 3 intersections
-		if (rayDir[1] > 0) {
+		if (rayDir[i] > 0) {
 			tVals[i] = (boxMin[i] - rayPos[i]) / rayDir[i];
 		}
 		else if (rayDir[i] < 0) {
