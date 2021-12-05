@@ -4,6 +4,7 @@
 #include "../../Plugins/OpenGLRendering/OGLShader.h"
 #include "../../Plugins/OpenGLRendering/OGLTexture.h"
 #include "../../Common/TextureLoader.h"
+#include"../CSC8503Common/PositionConstraint.h"
 
 using namespace NCL;
 using namespace CSC8503;
@@ -244,13 +245,33 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	InitMixedGridWorld(5, 5, 3.5f, 3.5f);
-	InitGameExamples();
-	InitDefaultFloor();
+	//InitMixedGridWorld(5, 5, 3.5f, 3.5f);
+	//InitElasticitySphereGrid(5, 5, 1.0f);
+	//InitGameExamples();
+	//InitDefaultFloor();
+	BridgeConstraintTest();
 }
 
 void TutorialGame::BridgeConstraintTest() {
+	Vector3 cubeSize = Vector3(5, 5, 5);
+	float invCubeMass = 10;
+	int numLinks = 10;
+	float maxDistance = 30;
+	float cubeDistance = 20;
 
+	Vector3 startPos = Vector3(50, 50, 50);
+	GameObject* start = AddCubeToWorld(startPos + Vector3(0, 0, 0), cubeSize, 0);
+	GameObject* end = AddCubeToWorld(startPos + Vector3((numLinks + 2) * cubeDistance, 0, 0), cubeSize, 0);
+	GameObject* previous = start;
+
+	for (int i = 0; i < numLinks; i++) {
+		GameObject* block = AddCubeToWorld(startPos + Vector3((i + 1) * cubeDistance, 0, 0), cubeSize, invCubeMass);
+		PositionConstraint* posConstraint = new PositionConstraint(previous, block, maxDistance);
+		world->AddConstraint(posConstraint);
+		previous = block;
+	}
+	PositionConstraint* posConstraint = new PositionConstraint(previous, end, maxDistance);
+	world->AddConstraint(posConstraint);
 
 }
 
@@ -287,7 +308,7 @@ rigid body representation. This and the cube function will let you build a lot o
 physics worlds. You'll probably need another function for the creation of OBB cubes too.
 
 */
-GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass) {
+GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass, float elasticity) {
 	GameObject* sphere = new GameObject();
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
@@ -303,6 +324,7 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 
 	sphere->GetPhysicsObject()->SetInverseMass(inverseMass);
 	sphere->GetPhysicsObject()->InitSphereInertia();
+	sphere->GetPhysicsObject()->SetElasticity(elasticity);
 
 	world->AddGameObject(sphere);
 
@@ -366,6 +388,8 @@ void TutorialGame::InitSphereGridWorld(int numRows, int numCols, float rowSpacin
 void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing) {
 	float sphereRadius = 1.0f;
 	Vector3 cubeDims = Vector3(1, 1, 1);
+	float capsuleHH = 2;
+	float capsuleRadius = 0.5f;
 
 	for (int x = 0; x < numCols; ++x) {
 		for (int z = 0; z < numRows; ++z) {
@@ -373,6 +397,9 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 
 			if (rand() % 2) {
 				AddCubeToWorld(position, cubeDims);
+			}
+			else if (rand() % 3) {
+				AddCapsuleToWorld(position, capsuleHH, capsuleRadius);
 			}
 			else {
 				AddSphereToWorld(position, sphereRadius);
@@ -387,6 +414,14 @@ void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing,
 			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
 			AddCubeToWorld(position, cubeDims, 1.0f);
 		}
+	}
+}
+
+void TutorialGame::InitElasticitySphereGrid(int numRows, float rowSpacing, float sphereRadii) {
+	//For testing 'bounciness' of the elasticity of spheres
+	for (int x = 1; x < numRows + 1; ++x) {
+			Vector3 position = Vector3(x * rowSpacing, 20.0f, 0);
+			AddSphereToWorld(position, sphereRadii, 1.0f, ((float)x / numRows));
 	}
 }
 

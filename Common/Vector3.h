@@ -91,6 +91,14 @@ namespace NCL {
 				return Vector3((a.y*b.z) - (a.z*b.y), (a.z*b.x) - (a.x*b.z), (a.x*b.y) - (a.y*b.x));
 			}
 
+			//Calculates the distance between two points
+			static float Distance(const Vector3& a, const Vector3& b) {
+				float xDiff = (a.x - b.x);
+				float yDiff = (a.y - b.y);
+				float zDiff = (a.z - b.z);
+				return sqrt((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
+			}
+
 			inline Vector3  operator+(const Vector3  &a) const {
 				return Vector3(x + a.x, y + a.y, z + a.z);
 			}

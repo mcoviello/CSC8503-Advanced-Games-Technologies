@@ -113,6 +113,45 @@ bool CollisionDetection::RayOBBIntersection(const Ray&r, const Transform& worldT
 }
 
 bool CollisionDetection::RayCapsuleIntersection(const Ray& r, const Transform& worldTransform, const CapsuleVolume& volume, RayCollision& collision) {
+	Quaternion orientation = worldTransform.GetOrientation();
+	Vector3 position = worldTransform.GetPosition();
+	Matrix3 transform = Matrix3(orientation);
+	Matrix3 invTransform = Matrix3(orientation.Conjugate());
+
+	Vector3 originToRayVec = position - r.GetPosition();
+	Vector3 capsuleUpVec = invTransform * Vector3(0, 1, 0);
+	Vector3 orthVec = Vector3::Cross(capsuleUpVec, originToRayVec);
+	Plane p = Plane::PlaneFromTri(position, position + capsuleUpVec, position + orthVec);
+
+	Vector3 topSpherePos = position + capsuleUpVec * (volume.GetHalfHeight() - volume.GetRadius());
+	Vector3 bottomSpherePos = position - capsuleUpVec * (volume.GetHalfHeight() - volume.GetRadius());
+
+	RayCollision rayC;
+	RayPlaneIntersection(r, p, rayC);
+	Vector3 planeCollision = rayC.collidedAt;
+
+	bool collided = false;
+
+	Vector3 bestSphereCheck;
+	if (Vector3::Dot(topSpherePos - position, topSpherePos - planeCollision) < 0) {
+		collided = Vector3::Distance(topSpherePos, planeCollision) < volume.GetRadius();
+		bestSphereCheck = topSpherePos;
+	}
+	else if (Vector3::Dot(bottomSpherePos - position, bottomSpherePos - planeCollision) < 0) {
+		collided = Vector3::Distance(bottomSpherePos, planeCollision) < volume.GetRadius();
+		bestSphereCheck = bottomSpherePos;
+	}
+	else { //Collision lies on cylinder part of capsule
+		Vector3 centralPoint = position + capsuleUpVec * (Vector3::Dot(planeCollision - position, capsuleUpVec));
+		collided = Vector3::Distance(centralPoint, planeCollision) < volume.GetRadius();
+		bestSphereCheck = centralPoint;
+	}
+
+	if (collided) {
+		//Collision, do a ray sphere intersection test to calculate collision details
+		return RaySphereIntersection(r, Transform().SetPosition(bestSphereCheck), SphereVolume(volume.GetRadius()), collision);
+	}
+
 	return false;
 }
 
@@ -359,7 +398,14 @@ bool CollisionDetection::ObjectIntersection(GameObject* a, GameObject* b, Collis
 }
 
 bool CollisionDetection::AABBTest(const Vector3& posA, const Vector3& posB, const Vector3& halfSizeA, const Vector3& halfSizeB) {
-	return false;
+		Vector3 delta = posB - posA;
+		Vector3 totalSize = halfSizeA + halfSizeB;
+			if (abs(delta.x) < totalSize.x &&
+				abs(delta.y) < totalSize.y &&
+				abs(delta.z) < totalSize.z) {
+			return true;
+		}
+		return false;
 }
 
 //AABB/AABB Collisions

@@ -39,6 +39,14 @@ namespace NCL {
 				return inverseMass;
 			}
 
+			void SetElasticity(float elas) {
+				elasticity = elas;
+			}
+
+			float GetElasticity() const {
+				return elasticity;
+			}
+
 			void ApplyAngularImpulse(const Vector3& force);
 			void ApplyLinearImpulse(const Vector3& force);
 			
