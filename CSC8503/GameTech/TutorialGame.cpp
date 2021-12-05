@@ -246,10 +246,10 @@ void TutorialGame::InitWorld() {
 	physics->Clear();
 
 	//InitMixedGridWorld(5, 5, 3.5f, 3.5f);
-	//InitElasticitySphereGrid(5, 5, 1.0f);
+	InitElasticitySphereGrid(5, 5, 1.0f);
 	//InitGameExamples();
-	//InitDefaultFloor();
-	BridgeConstraintTest();
+	InitDefaultFloor();
+	//BridgeConstraintTest();
 }
 
 void TutorialGame::BridgeConstraintTest() {
