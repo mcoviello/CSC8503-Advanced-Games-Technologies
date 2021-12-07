@@ -32,6 +32,10 @@ namespace NCL {
 			void MoveSelectedObject();
 			void DebugObjectMovement();
 			void LockedObjectMovement();
+			void DebugDrawCollider(const CollisionVolume* c, Transform* worldTransform);
+			void DebugDrawAABB(AABBVolume* a, Transform* worldTransform);
+			void DebugDrawSphere(SphereVolume* a, Transform* worldTransform);
+			void DebugDrawCapsule(CapsuleVolume* a, Transform* worldTransform);
 
 			GameObject* AddFloorToWorld(const Vector3& position);
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, float elasticity = 0.66f);
@@ -49,6 +53,7 @@ namespace NCL {
 
 			bool useGravity;
 			bool inSelectionMode;
+			bool drawColliders;
 
 			float		forceMagnitude;
 

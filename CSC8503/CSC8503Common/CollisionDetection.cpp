@@ -116,10 +116,9 @@ bool CollisionDetection::RayCapsuleIntersection(const Ray& r, const Transform& w
 	Quaternion orientation = worldTransform.GetOrientation();
 	Vector3 position = worldTransform.GetPosition();
 	Matrix3 transform = Matrix3(orientation);
-	Matrix3 invTransform = Matrix3(orientation.Conjugate());
 
 	Vector3 originToRayVec = position - r.GetPosition();
-	Vector3 capsuleUpVec = invTransform * Vector3(0, 1, 0);
+	Vector3 capsuleUpVec = transform * Vector3(0, 1, 0);
 	Vector3 orthVec = Vector3::Cross(capsuleUpVec, originToRayVec);
 	Plane p = Plane::PlaneFromTri(position, position + capsuleUpVec, position + orthVec);
 
@@ -508,5 +507,26 @@ bool CollisionDetection::OBBIntersection(
 bool CollisionDetection::SphereCapsuleIntersection(
 	const CapsuleVolume& volumeA, const Transform& worldTransformA,
 	const SphereVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
+	Quaternion orientation = worldTransformA.GetOrientation();
+	Vector3 position = worldTransformA.GetPosition();
+	Matrix3 transform = Matrix3(orientation);
+
+	Vector3 capsuleUpVec = transform * Vector3(0, 1, 0);
+
+	Vector3 capTop = position + capsuleUpVec * (volumeA.GetHalfHeight() - volumeA.GetRadius());
+	Vector3 capBot = position - capsuleUpVec * (volumeA.GetHalfHeight() - volumeA.GetRadius());
+
+	Vector3 capsuleLine = capTop - capBot;
+	
+	//Project sphere's position onto capsuleline using dot product
+	Vector3 sphereCenter = worldTransformB.GetPosition();
+	float t = Vector3::Dot(sphereCenter - capTop, capsuleLine);
+	Vector3 closestPointOnLine = capTop + capsuleLine * min(max(t,0),1);
+
+	//If within range, get details of collision by doing a sphere-sphere collision
+	if (Vector3::Distance(closestPointOnLine, sphereCenter) < volumeA.GetRadius() + volumeB.GetRadius()) {
+		return SphereIntersection(SphereVolume(volumeA.GetRadius()), Transform().SetPosition(closestPointOnLine), 
+			volumeB, worldTransformB, collisionInfo);
+	}
 	return false;
 }

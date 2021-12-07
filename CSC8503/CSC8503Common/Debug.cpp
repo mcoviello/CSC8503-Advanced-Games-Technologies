@@ -55,7 +55,6 @@ void Debug::DrawAxisLines(const Matrix4& modelMatrix, float scaleBoost, float ti
 	DrawLine(worldPos, worldPos + (fwd * scaleBoost)	, Debug::BLUE, time);
 }
 
-
 void Debug::FlushRenderables(float dt) {
 	if (!renderer) {
 		return;
