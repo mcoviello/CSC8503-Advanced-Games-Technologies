@@ -363,10 +363,10 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	//InitMixedGridWorld(5, 5, 3.5f, 3.5f);
+	InitMixedGridWorld(5, 5, 3.5f, 3.5f);
 	//InitElasticitySphereGrid(5, 5, 1.0f);
 	//InitGameExamples();
-	InitColliderTest();
+	//InitColliderTest();
 	//InitDefaultFloor();
 	//BridgeConstraintTest();
 }
@@ -508,7 +508,7 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 	float sphereRadius = 1.0f;
 	Vector3 cubeDims = Vector3(1, 1, 1);
 	float capsuleHH = 2;
-	float capsuleRadius = 0.5f;
+	float capsuleRadius = 1.0f;
 
 	for (int x = 0; x < numCols; ++x) {
 		for (int z = 0; z < numRows; ++z) {
