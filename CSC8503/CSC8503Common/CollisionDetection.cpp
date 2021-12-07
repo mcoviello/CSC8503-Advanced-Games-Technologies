@@ -520,8 +520,9 @@ bool CollisionDetection::SphereCapsuleIntersection(
 	
 	//Project sphere's position onto capsuleline using dot product
 	Vector3 sphereCenter = worldTransformB.GetPosition();
-	float t = Vector3::Dot(sphereCenter - capTop, capsuleLine);
-	Vector3 closestPointOnLine = capTop + capsuleLine * min(max(t,0),1);
+	float t = Vector3::Dot(sphereCenter - position, capsuleLine);
+	Vector3 closestPointOnLine = position + capsuleLine * min(max(t,-1),1);
+	//Debug::DrawLine(closestPointOnLine, sphereCenter);
 
 	//If within range, get details of collision by doing a sphere-sphere collision
 	if (Vector3::Distance(closestPointOnLine, sphereCenter) < volumeA.GetRadius() + volumeB.GetRadius()) {
