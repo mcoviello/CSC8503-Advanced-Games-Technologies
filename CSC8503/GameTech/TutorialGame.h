@@ -34,8 +34,6 @@ namespace NCL {
 			void DebugObjectMovement();
 			void LockedObjectMovement();
 			void DebugDrawCollider(const CollisionVolume* c, Transform* worldTransform);
-			void DebugDrawAABB(AABBVolume* a, Transform* worldTransform);
-			void DebugDrawSphere(SphereVolume* a, Transform* worldTransform);
 			void DebugDrawCapsule(CapsuleVolume* a, Transform* worldTransform);
 
 			GameObject* AddFloorToWorld(const Vector3& position);

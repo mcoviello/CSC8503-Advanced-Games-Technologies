@@ -375,6 +375,10 @@ bool CollisionDetection::ObjectIntersection(GameObject* a, GameObject* b, Collis
 		return OBBIntersection((OBBVolume&)*volA, transformA, (OBBVolume&)*volB, transformB, collisionInfo);
 	}
 
+	if (pairType == VolumeType::Capsule) {
+		return CapsuleIntersection((CapsuleVolume&)*volA, transformA, (CapsuleVolume&)*volB, transformB, collisionInfo);
+	}
+
 	if (volA->type == VolumeType::AABB && volB->type == VolumeType::Sphere) {
 		return AABBSphereIntersection((AABBVolume&)*volA, transformA, (SphereVolume&)*volB, transformB, collisionInfo);
 	}
@@ -504,6 +508,64 @@ bool CollisionDetection::OBBIntersection(
 	return false;
 }
 
+bool CollisionDetection::CapsuleIntersection(
+	const CapsuleVolume& volumeA, const Transform& worldTransformA,
+	const CapsuleVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
+	Quaternion rotA = worldTransformA.GetOrientation();
+	Matrix3 aInvTrans = Matrix3(rotA.Conjugate());
+	Vector3 posA = worldTransformA.GetPosition();	
+	Quaternion rotB = worldTransformB.GetOrientation();
+	Matrix3 bInvTrans = Matrix3(rotB.Conjugate());
+	Vector3 posB = worldTransformB.GetPosition();
+	Vector3 aAxis = (rotA * Vector3(0, 1, 0)).Normalised();
+	Vector3 bAxis = (rotB * Vector3(0, 1, 0)).Normalised();
+
+	//Closest point on two lines algorithm from: https://wickedengine.net/2020/04/26/capsule-collision-detection/
+	Vector3 aTop = posA + aAxis * (volumeA.GetHalfHeight() - volumeA.GetRadius());
+	Vector3 aBot = posA - aAxis * (volumeA.GetHalfHeight() - volumeA.GetRadius());
+	Vector3 bTop = posB + bAxis * (volumeB.GetHalfHeight() - volumeB.GetRadius());
+	Vector3 bBot = posB - bAxis * (volumeB.GetHalfHeight() - volumeB.GetRadius());
+	//Vectors between capsule endpoints
+	Vector3 bTaT = bTop - aTop;
+	Vector3 bBaT = bBot - aTop;
+	Vector3 bTaB = bTop - aBot;
+	Vector3 bBaB = bBot - aBot;
+	//Square Distances
+	float bTaTSqrDist = Vector3::Dot(bTaT, bTaT);
+	float bBaTSqrDist = Vector3::Dot(bBaT, bBaT);
+	float bTaBSqrDist = Vector3::Dot(bTaB, bTaB);
+	float bBaBSqrDist = Vector3::Dot(bBaB, bBaB);
+
+	//Finding closest points on vectors a and b
+	Vector3 bestA;
+	if (bTaBSqrDist < bTaTSqrDist || bTaBSqrDist < bBaTSqrDist 
+		|| bBaBSqrDist < bTaTSqrDist || bBaBSqrDist < bBaTSqrDist)
+		bestA = aBot;
+	else
+		bestA = aTop;
+
+	float t = Vector3::Dot((bestA - posB), bAxis);
+	Vector3 bestB = posB + bAxis * min(max(t, -1), 1);
+	t = Vector3::Dot((bestB - posA), aAxis);
+	bestA = posA + aAxis * min(max(t, -1), 1);
+
+	//Sphere-Sphere Collision Detection
+	float radii = volumeA.GetRadius() + volumeB.GetRadius();
+	Vector3 delta = bestB - bestA;
+	float deltaLength = Vector3::Distance(bestA, bestB);
+
+	//If within range, get details of collision by doing a sphere-sphere collision
+	if (deltaLength < radii) {
+		float penetration = (radii - deltaLength);
+		Vector3 normal = delta.Normalised();
+		Vector3 localA = aInvTrans * (bestA + normal * volumeA.GetRadius() * 2);
+		Vector3 localB = bInvTrans * (bestB - normal * volumeB.GetRadius() * 2);
+		collisionInfo.AddContactPoint(localA, localB, normal, penetration);
+		return true;
+	}
+	return false;
+}
+
 bool CollisionDetection::SphereCapsuleIntersection(
 	const CapsuleVolume& volumeA, const Transform& worldTransformA,
 	const SphereVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
@@ -513,24 +575,23 @@ bool CollisionDetection::SphereCapsuleIntersection(
 	Matrix3 invTransform = Matrix3(orientation.Conjugate());
 
 	Vector3 capsuleUpVec = transform * Vector3(0, 1, 0);
-
 	Vector3 capTop = position + capsuleUpVec * (volumeA.GetHalfHeight() - volumeA.GetRadius());
 	Vector3 capBot = position - capsuleUpVec * (volumeA.GetHalfHeight() - volumeA.GetRadius());
 	
 	//Project sphere's position onto capsuleline using dot product
 	Vector3 sphereCenter = worldTransformB.GetPosition();
-	float t = Vector3::Dot(sphereCenter - position, capsuleUpVec);
+	float t = Vector3::Dot((sphereCenter - position).Normalised(), capsuleUpVec.Normalised());
 	Vector3 closestPointOnLine = position + capsuleUpVec * min(max(t,-1),1);
 	//Debug::DrawLine(closestPointOnLine, sphereCenter);
 
 	float radii = volumeA.GetRadius() + volumeB.GetRadius();
 	Vector3 delta = sphereCenter - closestPointOnLine;
-	float deltaLength = delta.Length();
+	float deltaLength = Vector3::Distance(sphereCenter, closestPointOnLine);
 	//If within range, get details of collision by doing a sphere-sphere collision
 	if ( deltaLength < radii ) {
 		float penetration = radii - deltaLength;
 		Vector3 normal = delta.Normalised();
-		Vector3 localA = Vector3(0,1,0) * min(max(t, -1), 1) + invTransform * normal * volumeA.GetRadius();
+		Vector3 localA = Vector3(0,1,0) * normal * volumeA.GetRadius();
 		Vector3 localB = -normal * volumeB.GetRadius();
 		Debug::DrawLine(closestPointOnLine + normal * -10, closestPointOnLine + normal * 10);
 

@@ -1,5 +1,7 @@
 #include "Debug.h"
 #include "../../Common/Matrix4.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
 using namespace NCL;
 
 OGLRenderer* Debug::renderer = nullptr;
@@ -38,6 +40,58 @@ void Debug::DrawLine(const Vector3& startpoint, const Vector3& endpoint, const V
 	newEntry.time	= time;
 
 	lineEntries.emplace_back(newEntry);
+}
+
+void Debug::DrawCube(const Vector3& centre, const Vector3& halfSizes, const Vector4& colour, float time) {
+	//TODO: Add rotation for OBBs
+	//Add small spacing to the halfsizes, so they show above the mesh
+	Vector3 adjSizes = halfSizes + Vector3(0.01f, 0.01f, 0.01f);
+
+	//Top-front-right corner points
+	Debug::DrawLine(centre + adjSizes, centre + (Vector3(-adjSizes.x, adjSizes.y, adjSizes.z)), colour, time);
+	Debug::DrawLine(centre + adjSizes, centre + (Vector3(adjSizes.x, -adjSizes.y, adjSizes.z)), colour, time);
+	Debug::DrawLine(centre + adjSizes, centre + (Vector3(adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
+	//Bottom-back-left corner points
+	Debug::DrawLine(centre - adjSizes, centre + (Vector3(adjSizes.x, -adjSizes.y, -adjSizes.z)), colour, time);
+	Debug::DrawLine(centre - adjSizes, centre + (Vector3(-adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
+	Debug::DrawLine(centre - adjSizes, centre + (Vector3(-adjSizes.x, -adjSizes.y, adjSizes.z)), colour, time);
+	//The connecting lines
+	Debug::DrawLine(centre + (Vector3(-adjSizes.x, adjSizes.y, adjSizes.z)), centre + (Vector3(-adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
+	Debug::DrawLine(centre + (Vector3(adjSizes.x, -adjSizes.y, adjSizes.z)), centre + (Vector3(adjSizes.x, -adjSizes.y, -adjSizes.z)), colour, time);
+	Debug::DrawLine(centre + (Vector3(adjSizes.x, -adjSizes.y, -adjSizes.z)), centre + (Vector3(adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
+	Debug::DrawLine(centre + (Vector3(adjSizes.x, -adjSizes.y, adjSizes.z)), centre + (Vector3(-adjSizes.x, -adjSizes.y, adjSizes.z)), colour, time);
+	Debug::DrawLine(centre + (Vector3(-adjSizes.x, -adjSizes.y, adjSizes.z)), centre + (Vector3(-adjSizes.x, adjSizes.y, adjSizes.z)), colour, time);
+	Debug::DrawLine(centre + (Vector3(-adjSizes.x, adjSizes.y, -adjSizes.z)), centre + (Vector3(adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
+}
+
+void Debug::DrawCircle(const Vector3& centre, const float& radius, const Vector4& colour, float time) {
+	float step = 0.5f;
+	float adjRadius = radius + 0.05f;
+	//To allow lines to be on the surface of the sphere at lower 'resolutions'
+	Vector3 prevPoint = centre + Vector3(adjRadius, 0, 0);
+
+	//Draw One along xy axis...
+	for (float angle = 0.0f; angle < 2 * M_PI; angle += step) {
+		Vector3 pointOnSphere = Vector3(cos(angle) * adjRadius + centre.x, sin(angle) * adjRadius + centre.y, centre.z);
+		Debug::DrawLine(prevPoint, pointOnSphere, colour, time);
+		prevPoint = pointOnSphere;
+	}
+	prevPoint = centre + Vector3(0, 0, adjRadius);
+
+	//And one along the zy axis...
+	for (float angle = 0.0f; angle < 2 * M_PI; angle += step) {
+		Vector3 pointOnSphere = Vector3(centre.x, sin(angle) * adjRadius + centre.y, cos(angle) * adjRadius + centre.z);
+		Debug::DrawLine(prevPoint, pointOnSphere, colour, time);
+		prevPoint = pointOnSphere;
+	}
+	prevPoint = centre + Vector3(adjRadius, 0, 0);
+
+	//And one along the xz axis...
+	for (float angle = 0.0f; angle < 2 * M_PI; angle += step) {
+		Vector3 pointOnSphere = Vector3(cos(angle) * adjRadius + centre.x, centre.y, sin(angle) * adjRadius + centre.z);
+		Debug::DrawLine(prevPoint, pointOnSphere, colour, time);
+		prevPoint = pointOnSphere;
+	}
 }
 
 void Debug::DrawAxisLines(const Matrix4& modelMatrix, float scaleBoost, float time) {

@@ -245,71 +245,20 @@ void TutorialGame::DebugObjectMovement() {
 }
 
 void TutorialGame::DebugDrawCollider(const CollisionVolume* c, Transform* worldTransform) {
+	Vector4 col = Vector4(1, 0, 0, 1);
 	switch (c->type) {
-	case VolumeType::AABB: DebugDrawAABB((AABBVolume*)c, worldTransform); break;
-	case VolumeType::Sphere: DebugDrawSphere((SphereVolume*)c, worldTransform); break;
+	case VolumeType::AABB: Debug::DrawCube(worldTransform->GetPosition(), ((AABBVolume*)c)->GetHalfDimensions(), col); break;
+	case VolumeType::Sphere: Debug::DrawCircle(worldTransform->GetPosition(), ((SphereVolume*)c)->GetRadius(), col); break;
 	case VolumeType::Capsule: DebugDrawCapsule((CapsuleVolume*)c, worldTransform); break;
 	default: break;
-	}
-}
-//Draws a line along each edge of the AABB
-void TutorialGame::DebugDrawAABB(AABBVolume* a, Transform* worldTransform) {
-	//Add small spacing to the halfsizes, so they show above the mesh
-	Vector3 halfSizes = a->GetHalfDimensions() + Vector3(0.01f, 0.01f, 0.01f);
-	Vector3 position = worldTransform->GetPosition();
-	
-	Vector4 col = Vector4(1, 0, 0, 1);
-
-	//Draw all of the lines making up the AABB (no need for rotation)
-	Debug::DrawLine(position + halfSizes, position + (Vector3(-halfSizes.x, halfSizes.y, halfSizes.z)), col);
-	Debug::DrawLine(position + halfSizes, position + (Vector3(halfSizes.x, -halfSizes.y, halfSizes.z)), col);
-	Debug::DrawLine(position + halfSizes, position + (Vector3(halfSizes.x, halfSizes.y, -halfSizes.z)), col);
-	Debug::DrawLine(position - halfSizes, position + (Vector3(halfSizes.x, -halfSizes.y, -halfSizes.z)), col);
-	Debug::DrawLine(position - halfSizes, position + (Vector3(-halfSizes.x, halfSizes.y, -halfSizes.z)), col);
-	Debug::DrawLine(position - halfSizes, position + (Vector3(-halfSizes.x, -halfSizes.y, halfSizes.z)), col);
-	Debug::DrawLine(position + (Vector3(-halfSizes.x, halfSizes.y, halfSizes.z)), position + (Vector3(-halfSizes.x, halfSizes.y, -halfSizes.z)), col);
-	Debug::DrawLine(position + (Vector3(halfSizes.x, -halfSizes.y, halfSizes.z)), position + (Vector3(halfSizes.x, -halfSizes.y, -halfSizes.z)), col);
-	Debug::DrawLine(position + (Vector3(halfSizes.x, -halfSizes.y, -halfSizes.z)), position + (Vector3(halfSizes.x, halfSizes.y, -halfSizes.z)), col);
-	Debug::DrawLine(position + (Vector3(halfSizes.x, -halfSizes.y, halfSizes.z)), position + (Vector3(-halfSizes.x, -halfSizes.y, halfSizes.z)), col);
-	Debug::DrawLine(position + (Vector3(-halfSizes.x, -halfSizes.y, halfSizes.z)), position + (Vector3(-halfSizes.x, halfSizes.y, halfSizes.z)), col);
-	Debug::DrawLine(position + (Vector3(-halfSizes.x, halfSizes.y, -halfSizes.z)), position + (Vector3(halfSizes.x, halfSizes.y, -halfSizes.z)), col);
-}
-//Draws three circles, one along each sphere axis
-void TutorialGame::DebugDrawSphere(SphereVolume* a, Transform* worldTransform) {
-	float step = 0.5f;
-	float radius = a->GetRadius() + 0.05f;
-	//To allow lines to be on the surface of the sphere at lower 'resolutions'
-	Vector4 col = Vector4(1, 0, 0, 1);
-	Vector3 pos = worldTransform->GetPosition();
-	Vector3 prevPoint = pos + Vector3(radius, 0 , 0);
-	//Draw One along x axis...
-	for (float angle = 0.0f; angle < 6.28f; angle += step) {
-		Vector3 pointOnSphere = Vector3(cos(angle) * radius + pos.x, sin(angle) * radius + pos.y, pos.z);
-		Debug::DrawLine(prevPoint, pointOnSphere, col);
-		prevPoint = pointOnSphere;
-	}
-	prevPoint = pos + Vector3(0, 0, radius);
-	//And one along the z axis...
-	for (float angle = 0.0f; angle < 6.28f; angle += step) {
-		Vector3 pointOnSphere = Vector3(pos.x, sin(angle) * radius + pos.y, cos(angle) * radius + pos.z);
-		Debug::DrawLine(prevPoint, pointOnSphere, col);
-		prevPoint = pointOnSphere;
-	}
-	prevPoint = pos + Vector3(radius, 0, 0);
-	//And one along the z axis...
-	for (float angle = 0.0f; angle < 6.28f; angle += step) {
-		Vector3 pointOnSphere = Vector3(cos(angle) * radius + pos.x, pos.y, sin(angle) * radius + pos.z);
-		Debug::DrawLine(prevPoint, pointOnSphere, col);
-		prevPoint = pointOnSphere;
 	}
 }
 //Outlines the capsule, with spheres at the ends
 void TutorialGame::DebugDrawCapsule(CapsuleVolume* a, Transform* worldTransform) {
 	Vector4 col = Vector4(1, 0, 0, 1);
-	float step = 0.6f;
 	//Add small spacings to the radius and halfheight so that they show up better through the mesh
-	float radius = a->GetRadius() + 0.01f;
-	float halfHeight = a->GetHalfHeight() + 0.01f;
+	float radius = a->GetRadius();
+	float halfHeight = a->GetHalfHeight();
 	Vector3 pos = worldTransform->GetPosition();
 	Quaternion rot = worldTransform->GetOrientation();
 	Matrix3 transform = Matrix3(rot);
@@ -324,30 +273,8 @@ void TutorialGame::DebugDrawCapsule(CapsuleVolume* a, Transform* worldTransform)
 	Debug::DrawLine(bottomPoint - transform * Vector3(0, 0, radius), topPoint - transform * Vector3(0, 0, radius), col);
 
 	//Draw semicircles around top and bottom
-	Vector3 prevPoint = topPoint + Vector3(-radius, 0, 0);
-	for (float angle = 0.0f; angle < 6.28f; angle += step) {
-		Vector3 pointOnSphere = Vector3(cos(angle) * radius + topPoint.x, sin(angle) * radius + topPoint.y, topPoint.z);
-		Debug::DrawLine(prevPoint, pointOnSphere, col);
-		prevPoint = pointOnSphere;
-	}
-	prevPoint = topPoint + Vector3(0, 0, -radius);
-	for (float angle = 0.0f; angle < 6.28f; angle += step) {
-		Vector3 pointOnSphere = Vector3(topPoint.x, sin(angle) * radius + topPoint.y, cos(angle) * radius + topPoint.z);
-		Debug::DrawLine(prevPoint, pointOnSphere, col);
-		prevPoint = pointOnSphere;
-	}
-	prevPoint = bottomPoint + Vector3(-radius, 0, 0);
-	for (float angle = 0.0f; angle < 6.28f; angle += step) {
-		Vector3 pointOnSphere = Vector3(cos(angle) * radius + bottomPoint.x, sin(angle) * radius + bottomPoint.y, bottomPoint.z);
-		Debug::DrawLine(prevPoint, pointOnSphere, col);
-		prevPoint = pointOnSphere;
-	}
-	prevPoint = bottomPoint + Vector3(0, 0, -radius);
-	for (float angle = 0.0f; angle < 6.28f; angle += step) {
-		Vector3 pointOnSphere = Vector3(bottomPoint.x, sin(angle) * radius + bottomPoint.y, cos(angle) * radius + bottomPoint.z);
-		Debug::DrawLine(prevPoint, pointOnSphere, col);
-		prevPoint = pointOnSphere;
-	}
+	Debug::DrawCircle(topPoint, radius, col);
+	Debug::DrawCircle(bottomPoint, radius, col);
 }
 
 void TutorialGame::InitCamera() {
@@ -363,10 +290,10 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	InitMixedGridWorld(5, 5, 3.5f, 3.5f);
+	//InitMixedGridWorld(5, 5, 3.5f, 3.5f);
 	//InitElasticitySphereGrid(5, 5, 1.0f);
 	//InitGameExamples();
-	//InitColliderTest();
+	InitColliderTest();
 	//InitDefaultFloor();
 	//BridgeConstraintTest();
 }
@@ -507,7 +434,7 @@ void TutorialGame::InitSphereGridWorld(int numRows, int numCols, float rowSpacin
 void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing) {
 	float sphereRadius = 1.0f;
 	Vector3 cubeDims = Vector3(1, 1, 1);
-	float capsuleHH = 2;
+	float capsuleHH = 4;
 	float capsuleRadius = 1.0f;
 
 	for (int x = 0; x < numCols; ++x) {
@@ -529,7 +456,8 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 
 void TutorialGame::InitColliderTest() {
 	AddCapsuleToWorld(Vector3(10, 10, 10), 2, 1);
-	AddSphereToWorld(Vector3(15,10,10), 1);
+	AddCapsuleToWorld(Vector3(15, 10, 10), 2, 1);
+	AddSphereToWorld(Vector3(10, 10, 15), 2);
 }
 
 void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims) {
