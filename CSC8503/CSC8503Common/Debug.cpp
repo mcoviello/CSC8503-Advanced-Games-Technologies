@@ -1,5 +1,6 @@
 #include "Debug.h"
 #include "../../Common/Matrix4.h"
+#include "../../Common/Matrix3.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
 using namespace NCL;
@@ -42,29 +43,31 @@ void Debug::DrawLine(const Vector3& startpoint, const Vector3& endpoint, const V
 	lineEntries.emplace_back(newEntry);
 }
 
-void Debug::DrawCube(const Vector3& centre, const Vector3& halfSizes, const Vector4& colour, float time) {
-	//TODO: Add rotation for OBBs
-	//Add small spacing to the halfsizes, so they show above the mesh
+void Debug::DrawCube(const Vector3& center, const Vector3& halfSizes, const Vector4& colour, float time, const Quaternion& rotation){
 	Vector3 adjSizes = halfSizes + Vector3(0.01f, 0.01f, 0.01f);
+	Matrix3 rot = Matrix3(rotation);
+
+	Vector3 topFrontRight = center + adjSizes;
+	Vector3 bottomLeftBack = center - adjSizes;
 
 	//Top-front-right corner points
-	Debug::DrawLine(centre + adjSizes, centre + (Vector3(-adjSizes.x, adjSizes.y, adjSizes.z)), colour, time);
-	Debug::DrawLine(centre + adjSizes, centre + (Vector3(adjSizes.x, -adjSizes.y, adjSizes.z)), colour, time);
-	Debug::DrawLine(centre + adjSizes, centre + (Vector3(adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
+	Debug::DrawLine(center + rot * adjSizes, center + rot * (adjSizes * Vector3(-1, 1, 1)), colour, time);
+	Debug::DrawLine(center + rot * adjSizes, center + rot * (adjSizes * Vector3(1, -1, 1)), colour, time);
+	Debug::DrawLine(center + rot * adjSizes, center + rot * (adjSizes * Vector3(1, 1, -1)), colour, time);
 	//Bottom-back-left corner points
-	Debug::DrawLine(centre - adjSizes, centre + (Vector3(adjSizes.x, -adjSizes.y, -adjSizes.z)), colour, time);
-	Debug::DrawLine(centre - adjSizes, centre + (Vector3(-adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
-	Debug::DrawLine(centre - adjSizes, centre + (Vector3(-adjSizes.x, -adjSizes.y, adjSizes.z)), colour, time);
+	Debug::DrawLine(center - rot * adjSizes, center + rot * (adjSizes * Vector3(1, -1, -1)), colour, time);
+	Debug::DrawLine(center - rot * adjSizes, center + rot * (adjSizes * Vector3(-1, 1, -1)), colour, time);
+	Debug::DrawLine(center - rot * adjSizes, center + rot * (adjSizes * Vector3(-1, -1, 1)), colour, time);
 	//The connecting lines
-	Debug::DrawLine(centre + (Vector3(-adjSizes.x, adjSizes.y, adjSizes.z)), centre + (Vector3(-adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
-	Debug::DrawLine(centre + (Vector3(adjSizes.x, -adjSizes.y, adjSizes.z)), centre + (Vector3(adjSizes.x, -adjSizes.y, -adjSizes.z)), colour, time);
-	Debug::DrawLine(centre + (Vector3(adjSizes.x, -adjSizes.y, -adjSizes.z)), centre + (Vector3(adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
-	Debug::DrawLine(centre + (Vector3(adjSizes.x, -adjSizes.y, adjSizes.z)), centre + (Vector3(-adjSizes.x, -adjSizes.y, adjSizes.z)), colour, time);
-	Debug::DrawLine(centre + (Vector3(-adjSizes.x, -adjSizes.y, adjSizes.z)), centre + (Vector3(-adjSizes.x, adjSizes.y, adjSizes.z)), colour, time);
-	Debug::DrawLine(centre + (Vector3(-adjSizes.x, adjSizes.y, -adjSizes.z)), centre + (Vector3(adjSizes.x, adjSizes.y, -adjSizes.z)), colour, time);
+	Debug::DrawLine(center + rot * (adjSizes * Vector3(-1, 1, 1)), center + rot * (adjSizes * Vector3(-1, 1, -1)), colour, time);
+	Debug::DrawLine(center + rot * (adjSizes * Vector3(1, -1, 1)), center + rot * (adjSizes * Vector3(1, -1, -1)), colour, time);
+	Debug::DrawLine(center + rot * (adjSizes * Vector3(1, -1, -1)), center + rot * (adjSizes * Vector3(1, 1, -1)), colour, time);
+	Debug::DrawLine(center + rot * (adjSizes * Vector3(1, -1, 1)), center + rot * (adjSizes * Vector3(-1, -1, 1)), colour, time);
+	Debug::DrawLine(center + rot * (adjSizes * Vector3(-1, -1, 1)), center + rot * (adjSizes * Vector3(-1, 1, 1)), colour, time);
+	Debug::DrawLine(center + rot * (adjSizes * Vector3(-1, 1, -1)), center + rot * (adjSizes * Vector3(1, 1, -1)), colour, time);
 }
 
-void Debug::DrawCircle(const Vector3& centre, const float& radius, const Vector4& colour, float time) {
+void Debug::DrawSphere(const Vector3& centre, const float& radius, const Vector4& colour, float time) {
 	float step = 0.5f;
 	float adjRadius = radius + 0.05f;
 	//To allow lines to be on the surface of the sphere at lower 'resolutions'

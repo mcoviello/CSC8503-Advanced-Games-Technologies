@@ -247,8 +247,9 @@ void TutorialGame::DebugObjectMovement() {
 void TutorialGame::DebugDrawCollider(const CollisionVolume* c, Transform* worldTransform) {
 	Vector4 col = Vector4(1, 0, 0, 1);
 	switch (c->type) {
-	case VolumeType::AABB: Debug::DrawCube(worldTransform->GetPosition(), ((AABBVolume*)c)->GetHalfDimensions(), col); break;
-	case VolumeType::Sphere: Debug::DrawCircle(worldTransform->GetPosition(), ((SphereVolume*)c)->GetRadius(), col); break;
+	case VolumeType::AABB: Debug::DrawCube(worldTransform->GetPosition(), ((AABBVolume*)c)->GetHalfDimensions(),col); break;
+	case VolumeType::OBB: Debug::DrawCube(worldTransform->GetPosition(), ((AABBVolume*)c)->GetHalfDimensions(),col, 0, worldTransform->GetOrientation()); break;
+	case VolumeType::Sphere: Debug::DrawSphere(worldTransform->GetPosition(), ((SphereVolume*)c)->GetRadius(), col); break;
 	case VolumeType::Capsule: DebugDrawCapsule((CapsuleVolume*)c, worldTransform); break;
 	default: break;
 	}
@@ -273,8 +274,8 @@ void TutorialGame::DebugDrawCapsule(CapsuleVolume* a, Transform* worldTransform)
 	Debug::DrawLine(bottomPoint - transform * Vector3(0, 0, radius), topPoint - transform * Vector3(0, 0, radius), col);
 
 	//Draw semicircles around top and bottom
-	Debug::DrawCircle(topPoint, radius, col);
-	Debug::DrawCircle(bottomPoint, radius, col);
+	Debug::DrawSphere(topPoint, radius, col);
+	Debug::DrawSphere(bottomPoint, radius, col);
 }
 
 void TutorialGame::InitCamera() {
@@ -399,10 +400,13 @@ GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float halfH
 
 }
 
-GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass) {
+GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass) {
 	GameObject* cube = new GameObject();
 
-	AABBVolume* volume = new AABBVolume(dimensions);
+	CollisionVolume* volume;
+		volume = axisAligned ? 
+			(CollisionVolume*) new AABBVolume(dimensions) : 
+			(CollisionVolume*) new OBBVolume(dimensions);
 
 	cube->SetBoundingVolume((CollisionVolume*)volume);
 
@@ -442,7 +446,7 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
 
 			if (rand() % 2) {
-				AddCubeToWorld(position, cubeDims);
+				AddCubeToWorld(position, cubeDims, false);
 			}
 			else if (rand() % 3) {
 				AddCapsuleToWorld(position, capsuleHH, capsuleRadius);
@@ -455,10 +459,9 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 }
 
 void TutorialGame::InitColliderTest() {
-	AddCapsuleToWorld(Vector3(10, 10, 10), 2, 1);
-	AddCapsuleToWorld(Vector3(15, 10, 10), 2, 1);
-	AddSphereToWorld(Vector3(10, 10, 15), 2);
-	AddSphereToWorld(Vector3(15, 10, 15), 2);
+	Vector3 cubeDims = Vector3(1, 1, 1);
+	AddCubeToWorld(Vector3(0,0,0), cubeDims, false);
+	AddSphereToWorld(Vector3(5,0,0), 1.0f);
 }
 
 void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims) {
