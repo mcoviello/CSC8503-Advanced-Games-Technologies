@@ -558,8 +558,8 @@ bool CollisionDetection::CapsuleIntersection(
 	if (deltaLength < radii) {
 		float penetration = (radii - deltaLength);
 		Vector3 normal = delta.Normalised();
-		Vector3 localA = aInvTrans * (bestA + normal * volumeA.GetRadius() * 2);
-		Vector3 localB = bInvTrans * (bestB - normal * volumeB.GetRadius() * 2);
+		Vector3 localA = bestA - posA + (normal) * volumeA.GetRadius();
+		Vector3 localB = bestB - posB - normal * volumeB.GetRadius();
 		collisionInfo.AddContactPoint(localA, localB, normal, penetration);
 		return true;
 	}
@@ -588,12 +588,11 @@ bool CollisionDetection::SphereCapsuleIntersection(
 	Vector3 delta = sphereCenter - closestPointOnLine;
 	float deltaLength = Vector3::Distance(sphereCenter, closestPointOnLine);
 	//If within range, get details of collision by doing a sphere-sphere collision
-	if ( deltaLength < radii ) {
+	if (deltaLength < radii) {
 		float penetration = radii - deltaLength;
 		Vector3 normal = delta.Normalised();
-		Vector3 localA = Vector3(0,1,0) * normal * volumeA.GetRadius();
-		Vector3 localB = -normal * volumeB.GetRadius();
-		Debug::DrawLine(closestPointOnLine + normal * -10, closestPointOnLine + normal * 10);
+		Vector3 localA = closestPointOnLine - position + (normal * volumeA.GetRadius());
+		Vector3 localB = (-normal * volumeB.GetRadius());
 
 		collisionInfo.AddContactPoint(localA, localB, normal, penetration);
 		return true;

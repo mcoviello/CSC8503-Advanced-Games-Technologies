@@ -458,6 +458,7 @@ void TutorialGame::InitColliderTest() {
 	AddCapsuleToWorld(Vector3(10, 10, 10), 2, 1);
 	AddCapsuleToWorld(Vector3(15, 10, 10), 2, 1);
 	AddSphereToWorld(Vector3(10, 10, 15), 2);
+	AddSphereToWorld(Vector3(15, 10, 15), 2);
 }
 
 void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims) {
