@@ -248,7 +248,7 @@ void TutorialGame::DebugDrawCollider(const CollisionVolume* c, Transform* worldT
 	Vector4 col = Vector4(1, 0, 0, 1);
 	switch (c->type) {
 	case VolumeType::AABB: Debug::DrawCube(worldTransform->GetPosition(), ((AABBVolume*)c)->GetHalfDimensions(),col); break;
-	case VolumeType::OBB: Debug::DrawCube(worldTransform->GetPosition(), ((AABBVolume*)c)->GetHalfDimensions(),col, 0, worldTransform->GetOrientation()); break;
+	case VolumeType::OBB: Debug::DrawCube(worldTransform->GetPosition(), ((AABBVolume*)c)->GetHalfDimensions(),Vector4(0,1,0,1), 0, worldTransform->GetOrientation()); break;
 	case VolumeType::Sphere: Debug::DrawSphere(worldTransform->GetPosition(), ((SphereVolume*)c)->GetRadius(), col); break;
 	case VolumeType::Capsule: DebugDrawCapsule((CapsuleVolume*)c, worldTransform); break;
 	default: break;
@@ -291,10 +291,10 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	//InitMixedGridWorld(5, 5, 3.5f, 3.5f);
+	InitMixedGridWorld(5, 5, 3.5f, 3.5f);
 	//InitElasticitySphereGrid(5, 5, 1.0f);
 	//InitGameExamples();
-	InitColliderTest();
+	//InitColliderTest();
 	//InitDefaultFloor();
 	//BridgeConstraintTest();
 }
@@ -446,7 +446,7 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
 
 			if (rand() % 2) {
-				AddCubeToWorld(position, cubeDims, false);
+				AddCubeToWorld(position, cubeDims, true);
 			}
 			else if (rand() % 3) {
 				AddCapsuleToWorld(position, capsuleHH, capsuleRadius);
@@ -460,8 +460,11 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 
 void TutorialGame::InitColliderTest() {
 	Vector3 cubeDims = Vector3(1, 1, 1);
-	AddCubeToWorld(Vector3(0,0,0), cubeDims, false);
-	AddCubeToWorld(Vector3(5,0,0), cubeDims * 2, false);
+	AddCubeToWorld(Vector3(0,0,0), Vector3(100, 2, 100), false, 0.0f)->GetTransform().SetOrientation(Quaternion(1,0.5f,0,0));
+	AddCubeToWorld(Vector3(0,20,0), cubeDims * 2, false);
+	AddCubeToWorld(Vector3(0,20,10), cubeDims * 2, true);
+	AddSphereToWorld(Vector3(0,20,4), 2);
+	AddCapsuleToWorld(Vector3(0,20,15), 2, 1);
 }
 
 void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims) {
