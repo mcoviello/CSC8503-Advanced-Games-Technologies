@@ -13,6 +13,12 @@ namespace NCL {
         ~CapsuleVolume() {
 
         }
+
+        //TODO: Implement this!
+        Vector3 SupportFunction(const Transform& worldTransform, Vector3 axis) const override {
+            return Vector3(0, 0, 0);
+        }
+
         float GetRadius() const {
             return radius;
         }

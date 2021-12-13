@@ -514,7 +514,81 @@ bool CollisionDetection::AABBSphereIntersection(const AABBVolume& volumeA, const
 bool CollisionDetection::OBBIntersection(
 	const OBBVolume& volumeA, const Transform& worldTransformA,
 	const OBBVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
-	return false;
+	
+	//For every side of both shapes, project the extents onto a vector
+	//If there isn't overlap on ANY, they aren't colliding
+	//Check along the 3 axis the OBB is going along for BOTH OBBs (6 total)
+	//Then check along the cross products between all of these axes (9 total)
+	Quaternion rotA = worldTransformA.GetOrientation();
+	Quaternion rotB = worldTransformB.GetOrientation();	
+	Matrix3 invRotA = Matrix3(rotA.Conjugate());
+	Matrix3 invRotB = Matrix3(rotB.Conjugate());
+	Vector3 a1 = rotA * Vector3(1, 0, 0);
+	Vector3 a2 = rotA * Vector3(0, 1, 0);
+	Vector3 a3 = rotA * Vector3(0, 0, 1);
+	Vector3 b1 = rotB * Vector3(1, 0, 0);
+	Vector3 b2 = rotB * Vector3(0, 1, 0);
+	Vector3 b3 = rotB * Vector3(0, 0, 1);
+
+	Vector3 allAxis[15] = {
+		a1,a2,a3,b1,b2,b3,
+		Vector3::Cross(a1,b1), Vector3::Cross(a1,b2), Vector3::Cross(a1,b3),
+		Vector3::Cross(a2,b1), Vector3::Cross(a2,b2), Vector3::Cross(a2,b3),
+		Vector3::Cross(a3,b1), Vector3::Cross(a3,b2), Vector3::Cross(a3,b3),
+	};
+
+	//Variables to store collision points
+	float leastOverlap = FLT_MAX;
+	Vector3 leastOverlapAxis;
+	Vector3 closestPointA;
+	Vector3 closestPointB;
+
+	for(Vector3& v: allAxis) {
+		Vector3 aMax = volumeA.SupportFunction(worldTransformA, v);
+		Vector3 aMin = volumeA.SupportFunction(worldTransformA, -v);
+		Vector3 bMax = volumeB.SupportFunction(worldTransformB, v);
+		Vector3 bMin = volumeB.SupportFunction(worldTransformB, -v);
+		Vector3 aMaxAlongAxis = v * Vector3::Dot(v, aMax);
+		Vector3 aMinAlongAxis = v * Vector3::Dot(v, aMin);
+		Vector3 bMaxAlongAxis = v * Vector3::Dot(v, bMax);
+		Vector3 bMinAlongAxis = v * Vector3::Dot(v, bMin);
+
+		if ((aMinAlongAxis - bMaxAlongAxis).Length() < (bMinAlongAxis - aMaxAlongAxis).Length()) {
+			std::swap(aMaxAlongAxis, bMaxAlongAxis);
+			std::swap(aMax, bMax);
+			std::swap(aMinAlongAxis, bMinAlongAxis);
+			std::swap(aMin, bMin);
+		}
+
+		float aLen = (aMinAlongAxis - aMaxAlongAxis).Length();
+		float bLen = (bMinAlongAxis - bMaxAlongAxis).Length();
+
+
+		float totalLength = (aMinAlongAxis - bMaxAlongAxis).Length();
+
+		if (totalLength > aLen + bLen) {
+			return false;
+		}
+
+		float diffLen = ((aMin - aMax).Length() + (bMin - bMax).Length()) - totalLength;
+
+		if (diffLen < leastOverlap) {
+		leastOverlap = diffLen;
+		leastOverlapAxis = v;
+		closestPointA = aMax;
+		closestPointB = bMin;
+		}
+	}
+	Vector3 bestPoint = FindClosestPointOBB(worldTransformA.GetPosition(), worldTransformB.GetPosition(), closestPointA, closestPointB);
+	collisionInfo.AddContactPoint((bestPoint - worldTransformA.GetPosition()), (bestPoint - worldTransformB.GetPosition()), leastOverlapAxis, leastOverlap);
+	Debug::DrawSphere(bestPoint, 0.5f, Vector3(), 1);
+	return true;
+}
+
+Vector3 CollisionDetection::FindClosestPointOBB(const Vector3& massCenter1, const Vector3& massCenter2, const Vector3& pointA, const Vector3& pointB) {
+	float aSqrDist = (pointA - massCenter1).Length() + (pointA - massCenter2).Length();
+	float bSqrDist = (pointB - massCenter1).Length() + (pointB - massCenter2).Length();
+	return aSqrDist < bSqrDist ? pointA : pointB;
 }
 
 bool CollisionDetection::OBBSphereIntersection(const OBBVolume& volumeA, const Transform& worldTransformA,

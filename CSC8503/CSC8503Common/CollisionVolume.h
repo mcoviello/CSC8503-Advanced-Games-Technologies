@@ -1,4 +1,7 @@
 #pragma once
+
+using namespace NCL::CSC8503;
+
 namespace NCL {
 	enum class VolumeType {
 		AABB	= 1,
@@ -17,6 +20,8 @@ namespace NCL {
 			type = VolumeType::Invalid;
 		}
 		~CollisionVolume() {}
+
+		virtual Vector3 SupportFunction(const Transform& worldTransform, Vector3 axis) const = 0;
 
 		VolumeType type;
 	};

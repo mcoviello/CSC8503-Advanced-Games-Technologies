@@ -461,7 +461,7 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 void TutorialGame::InitColliderTest() {
 	Vector3 cubeDims = Vector3(1, 1, 1);
 	AddCubeToWorld(Vector3(0,0,0), cubeDims, false);
-	AddSphereToWorld(Vector3(5,0,0), 1.0f);
+	AddCubeToWorld(Vector3(5,0,0), cubeDims * 2, false);
 }
 
 void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims) {

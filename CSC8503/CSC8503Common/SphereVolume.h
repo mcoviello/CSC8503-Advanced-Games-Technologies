@@ -11,6 +11,10 @@ namespace NCL {
 		}
 		~SphereVolume() {}
 
+		Vector3 SupportFunction(const Transform& worldTransform, Vector3 axis) const override {
+			return worldTransform.GetPosition() + (axis.Normalised() * radius);
+		}
+
 		float GetRadius() const {
 			return radius;
 		}
