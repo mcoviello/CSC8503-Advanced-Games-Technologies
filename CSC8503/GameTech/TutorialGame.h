@@ -4,6 +4,7 @@
 
 namespace NCL {
 	namespace CSC8503 {
+		class Spring;
 		class TutorialGame		{
 		public:
 			TutorialGame();
@@ -17,16 +18,13 @@ namespace NCL {
 			void InitCamera();
 			void UpdateKeys();
 
+			void MainMenu();
+
 			void InitWorld();
 
 			void InitGameExamples();
 
-			void InitSphereGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, float radius);
-			void InitColliderTest();
-			void InitMixedGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing);
-			void InitElasticitySphereGrid(int numRows, float rowSpacing, float sphereRadii);
-			void InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims);
-			void InitDefaultFloor();
+			void InitLevel1();
 			void BridgeConstraintTest();
 	
 			bool SelectObject();
@@ -39,7 +37,9 @@ namespace NCL {
 			GameObject* AddFloorToWorld(const Vector3& position);
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, float elasticity = 0.66f);
 			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass = 10.0f);
-			
+
+			void AddPusher(Vector3 pos, Vector3 pusherDims, Quaternion rot, bool startCoiled);
+
 			GameObject* AddCapsuleToWorld(const Vector3& position, float halfHeight, float radius, float inverseMass = 10.0f);
 
 			GameObject* AddPlayerToWorld(const Vector3& position);
@@ -50,9 +50,12 @@ namespace NCL {
 			PhysicsSystem*		physics;
 			GameWorld*			world;
 
+			std::vector<Spring*> pushers;
+
 			bool useGravity;
 			bool inSelectionMode;
 			bool drawColliders;
+			bool gameStarted = false;
 
 			float		forceMagnitude;
 
@@ -80,4 +83,3 @@ namespace NCL {
 		};
 	}
 }
-

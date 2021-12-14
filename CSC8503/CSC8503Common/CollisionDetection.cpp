@@ -402,7 +402,7 @@ bool CollisionDetection::ObjectIntersection(GameObject* a, GameObject* b, Collis
 	if (volA->type == VolumeType::Sphere && volB->type == VolumeType::OBB) {
 		collisionInfo.a = b;
 		collisionInfo.b = a;
-		return OBBSphereIntersection((OBBVolume&)*volA, transformA, (SphereVolume&)*volB, transformB, collisionInfo);
+		return OBBSphereIntersection((OBBVolume&)*volB, transformB, (SphereVolume&)*volA, transformA, collisionInfo);
 	}
 
 	if (volA->type == VolumeType::OBB && volB->type == VolumeType::AABB) {
@@ -411,16 +411,7 @@ bool CollisionDetection::ObjectIntersection(GameObject* a, GameObject* b, Collis
 	if (volA->type == VolumeType::AABB && volB->type == VolumeType::OBB) {
 		collisionInfo.a = b;
 		collisionInfo.b = a;
-		return OBBAABBIntersection((OBBVolume&)* volA, transformA, (AABBVolume&)* volB, transformB, collisionInfo);
-	}
-
-	if (volA->type == VolumeType::OBB && volB->type == VolumeType::Capsule) {
-		return OBBCapsuleIntersection((OBBVolume&)* volA, transformA, (CapsuleVolume&)* volB, transformB, collisionInfo);
-	}
-	if (volA->type == VolumeType::Capsule && volB->type == VolumeType::OBB) {
-		collisionInfo.a = b;
-		collisionInfo.b = a;
-		return OBBCapsuleIntersection((OBBVolume&)* volA, transformA, (CapsuleVolume&)* volB, transformB, collisionInfo);
+		return OBBAABBIntersection((OBBVolume&)* volB, transformB, (AABBVolume&)* volA, transformA, collisionInfo);
 	}
 
 	return false;

@@ -5,6 +5,8 @@
 #include "../../Plugins/OpenGLRendering/OGLTexture.h"
 #include "../../Common/TextureLoader.h"
 #include"../CSC8503Common/PositionConstraint.h"
+#include"../CSC8503Common/Spring.h"
+#include "../CSC8503Common/PushdownState.h"
 
 using namespace NCL;
 using namespace CSC8503;
@@ -138,6 +140,12 @@ void TutorialGame::UpdateKeys() {
 	if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::P)) {
 		drawColliders = !drawColliders; //Toggle Collider Drawing
 	}
+	if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::L)) {
+		for (Spring* s : pushers) {
+			s->ToggleSpringCoil();
+
+		}
+	}
 	//Running certain physics updates in a consistent order might cause some
 	//bias in the calculations - the same objects might keep 'winning' the constraint
 	//allowing the other one to stretch too much etc. Shuffling the order so that it
@@ -244,6 +252,10 @@ void TutorialGame::DebugObjectMovement() {
 
 }
 
+void TutorialGame::MainMenu() {
+	
+}
+
 void TutorialGame::DebugDrawCollider(const CollisionVolume* c, Transform* worldTransform) {
 	Vector4 col = Vector4(1, 0, 0, 1);
 	switch (c->type) {
@@ -290,13 +302,9 @@ void TutorialGame::InitCamera() {
 void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
-
-	InitMixedGridWorld(5, 5, 3.5f, 3.5f);
-	//InitElasticitySphereGrid(5, 5, 1.0f);
-	//InitGameExamples();
-	//InitColliderTest();
-	//InitDefaultFloor();
-	//BridgeConstraintTest();
+	
+	InitLevel1();
+	AddPlayerToWorld(Vector3(0, 5, 0));
 }
 
 void TutorialGame::BridgeConstraintTest() {
@@ -425,105 +433,51 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 	return cube;
 }
 
-void TutorialGame::InitSphereGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
-	for (int x = 0; x < numCols; ++x) {
-		for (int z = 0; z < numRows; ++z) {
-			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
-			AddSphereToWorld(position, radius, 1.0f);
-		}
-	}
-	AddFloorToWorld(Vector3(0, -2, 0));
+void TutorialGame::InitLevel1() {
+	//AddPusher(Vector3(0,10,0), Vector3(1,2,4), Quaternion(1,1,1,1), false);
+	AddPusher(Vector3(30,10,0), Vector3(1,2,4), Quaternion(1,0,0,0), false);
+
+	GameObject* s1 = AddSphereToWorld(Vector3(10,30,10), 1, 1);
+	GameObject* s2 = AddCubeToWorld(Vector3(15, 30, 10), Vector3(1,1,1), false, 1);
 }
 
-void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing) {
-	float sphereRadius = 1.0f;
-	Vector3 cubeDims = Vector3(1, 1, 1);
-	float capsuleHH = 4;
-	float capsuleRadius = 1.0f;
-
-	for (int x = 0; x < numCols; ++x) {
-		for (int z = 0; z < numRows; ++z) {
-			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
-
-			if (rand() % 2) {
-				AddCubeToWorld(position, cubeDims, true);
-			}
-			else if (rand() % 3) {
-				AddCapsuleToWorld(position, capsuleHH, capsuleRadius);
-			}
-			else {
-				AddSphereToWorld(position, sphereRadius);
-			}
-		}
-	}
-}
-
-void TutorialGame::InitColliderTest() {
-	Vector3 cubeDims = Vector3(1, 1, 1);
-	AddCubeToWorld(Vector3(0,0,0), Vector3(100, 2, 100), false, 0.0f)->GetTransform().SetOrientation(Quaternion(1,0.5f,0,0));
-	AddCubeToWorld(Vector3(0,20,0), cubeDims * 2, false);
-	AddCubeToWorld(Vector3(0,20,10), cubeDims * 2, true);
-	AddSphereToWorld(Vector3(0,20,4), 2);
-	AddCapsuleToWorld(Vector3(0,20,15), 2, 1);
-}
-
-void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims) {
-	for (int x = 1; x < numCols+1; ++x) {
-		for (int z = 1; z < numRows+1; ++z) {
-			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
-			AddCubeToWorld(position, cubeDims, 1.0f);
-		}
-	}
-}
-
-void TutorialGame::InitElasticitySphereGrid(int numRows, float rowSpacing, float sphereRadii) {
-	//For testing 'bounciness' of the elasticity of spheres
-	for (int x = 1; x < numRows + 1; ++x) {
-			Vector3 position = Vector3(x * rowSpacing, 20.0f, 0);
-			AddSphereToWorld(position, sphereRadii, 1.0f, ((float)x / numRows));
-	}
-}
-
-void TutorialGame::InitDefaultFloor() {
-	AddFloorToWorld(Vector3(0, -2, 0));
+void TutorialGame::AddPusher(Vector3 pos, Vector3 pusherDims,  Quaternion rot, bool startCoiled) {
+	GameObject* s1 = AddSphereToWorld(pos, 1, 0);
+	GameObject* s2 = AddCubeToWorld(pos + rot * Vector3(5,0,0), pusherDims, true, 1);
+	s2->GetTransform().SetOrientation(rot);
+	Spring* spr = new Spring(s1, s2, 5, 8000, true);
+	world->AddConstraint(spr);
+	pushers.emplace_back(spr);
 }
 
 void TutorialGame::InitGameExamples() {
-	AddPlayerToWorld(Vector3(0, 5, 0));
-	AddEnemyToWorld(Vector3(5, 5, 0));
-	AddBonusToWorld(Vector3(10, 5, 0));
+	//AddPlayerToWorld(Vector3(0, 5, 0));
+	//AddEnemyToWorld(Vector3(5, 5, 0));
+	//AddBonusToWorld(Vector3(10, 5, 0));
 }
 
 GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
-	float meshSize = 3.0f;
-	float inverseMass = 0.5f;
+	float radius = 1.0f;
+	GameObject* sphere = new GameObject();
 
-	GameObject* character = new GameObject();
+	Vector3 sphereSize = Vector3(radius, radius, radius);
+	SphereVolume* volume = new SphereVolume(radius);
+	sphere->SetBoundingVolume((CollisionVolume*)volume);
 
-	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.85f, 0.3f) * meshSize);
-
-	character->SetBoundingVolume((CollisionVolume*)volume);
-
-	character->GetTransform()
-		.SetScale(Vector3(meshSize, meshSize, meshSize))
+	sphere->GetTransform()
+		.SetScale(sphereSize)
 		.SetPosition(position);
 
-	if (rand() % 2) {
-		character->SetRenderObject(new RenderObject(&character->GetTransform(), charMeshA, nullptr, basicShader));
-	}
-	else {
-		character->SetRenderObject(new RenderObject(&character->GetTransform(), charMeshB, nullptr, basicShader));
-	}
-	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
+	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
+	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume()));
 
-	character->GetPhysicsObject()->SetInverseMass(inverseMass);
-	character->GetPhysicsObject()->InitSphereInertia();
+	sphere->GetPhysicsObject()->SetInverseMass(1.0f);
+	sphere->GetPhysicsObject()->InitSphereInertia();
+	sphere->GetPhysicsObject()->SetElasticity(0.8f);
 
-	world->AddGameObject(character);
+	world->AddGameObject(sphere);
 
-	//lockedObject = character;
-
-	return character;
+	return sphere;
 }
 
 GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
@@ -663,3 +617,25 @@ void TutorialGame::MoveSelectedObject() {
 		}
 	}
 }
+
+class GameMenu : public PushdownState {
+	void OnAwake() override {
+		std::cout << "Menu awake\n";
+	}
+
+	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
+		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::UP)) {
+
+		}
+
+		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::DOWN)) {
+
+		}
+
+		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::RETURN)) {
+
+		}
+
+		return PushdownResult::NoChange;
+	}
+};
