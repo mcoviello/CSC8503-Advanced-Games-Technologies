@@ -146,6 +146,10 @@ void TutorialGame::UpdateKeys() {
 
 		}
 	}
+	if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::Y)) {
+		Vector3 camPos = world->GetMainCamera()->GetPosition();
+		AddCubeToWorld(camPos + Vector3(5, 0, 0), Vector3(1, 1, 1), false);
+	}
 	//Running certain physics updates in a consistent order might cause some
 	//bias in the calculations - the same objects might keep 'winning' the constraint
 	//allowing the other one to stretch too much etc. Shuffling the order so that it
@@ -302,7 +306,7 @@ void TutorialGame::InitCamera() {
 void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
-	
+	AddCubeToWorld(Vector3(0, 0, 0), Vector3(100, 1, 100), true, 0);
 	InitLevel1();
 	AddPlayerToWorld(Vector3(0, 5, 0));
 }
@@ -445,7 +449,7 @@ void TutorialGame::AddPusher(Vector3 pos, Vector3 pusherDims,  Quaternion rot, b
 	GameObject* s1 = AddSphereToWorld(pos, 1, 0);
 	GameObject* s2 = AddCubeToWorld(pos + rot * Vector3(5,0,0), pusherDims, true, 1);
 	s2->GetTransform().SetOrientation(rot);
-	Spring* spr = new Spring(s1, s2, 5, 8000, true);
+	Spring* spr = new Spring(s1, s2, 5, 35, true);
 	world->AddConstraint(spr);
 	pushers.emplace_back(spr);
 }

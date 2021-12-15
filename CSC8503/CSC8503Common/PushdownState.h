@@ -3,6 +3,9 @@
 
 namespace NCL {
 	namespace CSC8503 {
+
+		class TutorialGame;
+
 		class PushdownState :
 			public State
 		{
@@ -13,7 +16,7 @@ namespace NCL {
 			PushdownState();
 			~PushdownState();
 
-			virtual PushdownResult OnUpdate(float dt, PushdownState * *pushFunc) = 0;
+			virtual PushdownResult OnUpdate(float dt, PushdownState **pushFunc, TutorialGame* game) = 0;
 
 			PushdownResult PushdownUpdate(PushdownState** pushResult);
 

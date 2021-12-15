@@ -1,5 +1,6 @@
 #pragma once
 #include <stack>
+#include "../../Common/Window.h"
 
 namespace NCL {
 	namespace CSC8503 {

@@ -18,9 +18,12 @@ namespace NCL {
 				float extension = coiled ? distBetween : distBetween - restingLength;
 
 				Vector3 dirVec = (obj1->GetTransform().GetPosition() - obj2->GetTransform().GetPosition()).Normalised();
+				//Dampen the forces of the spring to get rid of infinite oscillations
+				Vector3 dampingForce1 = obj1->GetPhysicsObject()->GetLinearVelocity() * damping;
+				Vector3 dampingForce2 = obj2->GetPhysicsObject()->GetLinearVelocity() * damping;
 
-				obj1->GetPhysicsObject()->AddForce(dirVec * extension * -k * dt);
-				obj2->GetPhysicsObject()->AddForce(-dirVec * extension * -k * dt);
+				obj1->GetPhysicsObject()->ApplyLinearImpulse(((dirVec * extension * -k) - dampingForce1)* dt);
+				obj2->GetPhysicsObject()->ApplyLinearImpulse(-((dirVec * extension * -k) + dampingForce2) * dt);
 			}
 
 			void ToggleSpringCoil() {
@@ -32,6 +35,7 @@ namespace NCL {
 			float restingLength;
 			float k;
 			bool coiled;
+			float damping = 5.0f;
 		};
 	}
 }
