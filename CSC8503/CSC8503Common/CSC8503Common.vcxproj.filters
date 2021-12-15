@@ -111,6 +111,18 @@
     <ClInclude Include="GameMenu.h">
       <Filter>AI</Filter>
     </ClInclude>
+    <ClInclude Include="LevelOneState.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="LevelTwoState.h">
+      <Filter>AI</Filter>
+    </ClInclude>
+    <ClInclude Include="Coin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GameWorld.cpp">

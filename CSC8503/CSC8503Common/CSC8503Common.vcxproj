@@ -134,12 +134,16 @@
   <ItemGroup>
     <ClInclude Include="AABBVolume.h" />
     <ClInclude Include="CapsuleVolume.h" />
+    <ClInclude Include="Coin.h" />
     <ClInclude Include="GameMenu.h" />
+    <ClInclude Include="LevelOneState.h" />
+    <ClInclude Include="LevelTwoState.h" />
     <ClInclude Include="NavigationGrid.h" />
     <ClInclude Include="NavigationMap.h" />
     <ClInclude Include="NavigationMesh.h" />
     <ClInclude Include="NavigationPath.h" />
     <ClInclude Include="OBBVolume.h" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="PositionConstraint.h" />
     <ClInclude Include="SphereVolume.h" />
     <ClInclude Include="CollisionVolume.h" />

@@ -31,6 +31,13 @@ bool CollisionDetection::RayPlaneIntersection(const Ray&r, const Plane&p, RayCol
 
 bool CollisionDetection::RayIntersection(const Ray& r,GameObject& object, RayCollision& collision) {
 	bool hasCollided = false;
+	int layerMask = (Layer::Clickable);
+
+	std::cout << layerMask << " " << (object.GetLayer()) << "\n";
+
+	if (!(layerMask == (object.GetLayer() & layerMask))) {
+		return false;
+	}
 
 	const Transform& worldTransform = object.GetTransform();
 	const CollisionVolume* volume	= object.GetBoundingVolume();

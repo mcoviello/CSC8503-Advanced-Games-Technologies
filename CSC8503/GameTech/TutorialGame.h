@@ -12,6 +12,10 @@ namespace NCL {
 
 			virtual void UpdateGame(float dt);
 
+			void InitLevel1();
+			void InitLevel2();
+			void Menu(int option, float dt);
+
 		protected:
 			void InitialiseAssets();
 
@@ -24,7 +28,6 @@ namespace NCL {
 
 			void InitGameExamples();
 
-			void InitLevel1();
 			void BridgeConstraintTest();
 	
 			bool SelectObject();
@@ -35,8 +38,8 @@ namespace NCL {
 			void DebugDrawCapsule(CapsuleVolume* a, Transform* worldTransform);
 
 			GameObject* AddFloorToWorld(const Vector3& position);
-			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, float elasticity = 0.66f);
-			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass = 10.0f);
+			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, float elasticity = 0.66f, Layer layer = Layer::Other);
+			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass = 10.0f, Layer layer = Layer::Other);
 
 			void AddPusher(Vector3 pos, Vector3 pusherDims, Quaternion rot, bool startCoiled);
 
@@ -79,6 +82,9 @@ namespace NCL {
 			void LockCameraToObject(GameObject* o) {
 				lockedObject = o;
 			}
+
+			GameTimer* timer;
+			float gameStartedTime;
 
 		};
 	}

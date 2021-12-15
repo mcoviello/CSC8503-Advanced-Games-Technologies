@@ -313,9 +313,21 @@ void PhysicsSystem::NarrowPhase() {
 	for (std::set<CollisionDetection::CollisionInfo>::iterator
 		i = broadphaseCollisions.begin(); i != broadphaseCollisions.end(); i++) {
 		CollisionDetection::CollisionInfo info = *i;
+
+		int staticMask = Layer::StaticObjects | Layer::IgnoreAllCollisions;
+		int collisionMask = Layer::Collectable;
+
+		//Dont check collisions between static objects
+		if (((*i).a->GetLayer() & staticMask) && (*i).b->GetLayer() & staticMask) {
+			continue;
+		}
 		if (CollisionDetection::ObjectIntersection(info.a, info.b, info)) {
+			//std::cout << "Collision between " << i->a->GetName() << " and " << i->b->GetName() << std::endl;
 			info.framesLeft = numCollisionFrames;
-			ImpulseResolveCollision(*info.a, *info.b, info.point);
+			//Dont resolve collisions if one object is on collectable layer
+			if (!(i->a->GetLayer() & collisionMask) && !(i->b->GetLayer() & collisionMask)) {
+				ImpulseResolveCollision(*info.a, *info.b, info.point);
+			}
 			allCollisions.insert(info);
 		}
 	}
@@ -345,7 +357,7 @@ void PhysicsSystem::IntegrateAccel(float dt) {
 		Vector3 accel = force * inverseMass;
 
 		// -- Linear Acceleration -- //
-		if (applyGravity && inverseMass > 0) {
+		if (applyGravity && inverseMass > 0 && !(Layer::Collectable & (*i)->GetLayer())) {
 			accel += gravity; // dont move infinitely heavy objects
 		}
 

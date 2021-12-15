@@ -16,7 +16,7 @@ namespace NCL {
 			PushdownState();
 			~PushdownState();
 
-			virtual PushdownResult OnUpdate(float dt, PushdownState **pushFunc, TutorialGame* game) = 0;
+			virtual PushdownResult OnUpdate(float dt, PushdownState **pushFunc) = 0;
 
 			PushdownResult PushdownUpdate(PushdownState** pushResult);
 

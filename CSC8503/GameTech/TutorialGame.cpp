@@ -6,6 +6,7 @@
 #include "../../Common/TextureLoader.h"
 #include"../CSC8503Common/PositionConstraint.h"
 #include"../CSC8503Common/Spring.h"
+#include"../CSC8503Common/Coin.h"
 #include "../CSC8503Common/PushdownState.h"
 
 using namespace NCL;
@@ -51,7 +52,6 @@ void TutorialGame::InitialiseAssets() {
 	basicShader = new OGLShader("GameTechVert.glsl", "GameTechFrag.glsl");
 
 	InitCamera();
-	InitWorld();
 }
 
 TutorialGame::~TutorialGame()	{
@@ -92,7 +92,6 @@ void TutorialGame::UpdateGame(float dt) {
 			DebugDrawCollider((*i)->GetBoundingVolume(), &(*i)->GetTransform());
 		}
 	}
-
 	SelectObject();
 	MoveSelectedObject();
 	physics->Update(dt);
@@ -120,6 +119,27 @@ void TutorialGame::UpdateGame(float dt) {
 
 	Debug::FlushRenderables(dt);
 	renderer->Render();
+}
+
+void TutorialGame::Menu(int option, float dt) {
+	Vector4 selectedCol = Vector4(1, 0.5, 0.5, 1);
+	std::string one;
+	std::string two;
+	switch (option) {
+	case 0:
+		Debug::Print("-Play Level 1", Vector2(35, 40), selectedCol);
+		Debug::Print(" Play Level 2", Vector2(35, 50));
+		break;
+	case 1:
+		Debug::Print(" Play Level 1", Vector2(35, 40));
+		Debug::Print("-Play Level 2", Vector2(35, 50), selectedCol);
+		break;
+	}
+
+	Debug::FlushRenderables(dt);
+	renderer->Update(dt);
+	renderer->Render();
+
 }
 
 void TutorialGame::UpdateKeys() {
@@ -256,10 +276,6 @@ void TutorialGame::DebugObjectMovement() {
 
 }
 
-void TutorialGame::MainMenu() {
-	
-}
-
 void TutorialGame::DebugDrawCollider(const CollisionVolume* c, Transform* worldTransform) {
 	Vector4 col = Vector4(1, 0, 0, 1);
 	switch (c->type) {
@@ -340,7 +356,7 @@ A single function to add a large immoveable cube to the bottom of our world
 
 */
 GameObject* TutorialGame::AddFloorToWorld(const Vector3& position) {
-	GameObject* floor = new GameObject();
+	GameObject* floor = new GameObject("Floor", Layer::StaticObjects);
 
 	Vector3 floorSize	= Vector3(100, 2, 100);
 	AABBVolume* volume	= new AABBVolume(floorSize);
@@ -367,7 +383,7 @@ rigid body representation. This and the cube function will let you build a lot o
 physics worlds. You'll probably need another function for the creation of OBB cubes too.
 
 */
-GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass, float elasticity) {
+GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass, float elasticity, Layer layer) {
 	GameObject* sphere = new GameObject();
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
@@ -412,8 +428,8 @@ GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float halfH
 
 }
 
-GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass) {
-	GameObject* cube = new GameObject();
+GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass, Layer layer) {
+	GameObject* cube = new GameObject("", layer);
 
 	CollisionVolume* volume;
 		volume = axisAligned ? 
@@ -439,17 +455,30 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 
 void TutorialGame::InitLevel1() {
 	//AddPusher(Vector3(0,10,0), Vector3(1,2,4), Quaternion(1,1,1,1), false);
-	AddPusher(Vector3(30,10,0), Vector3(1,2,4), Quaternion(1,0,0,0), false);
-
+	AddFloorToWorld(Vector3(0, 0, 0));
+	AddPusher(Vector3(30,5,0), Vector3(1,2,4), Quaternion(1,0,0,0), false);
+	AddPusher(Vector3(60,5,0), Vector3(1,2,4), Quaternion(0,0,1,0), true);
+	AddBonusToWorld(Vector3(45, 5, 0));
+	AddPlayerToWorld(Vector3(34, 10, 0));
+	
 	GameObject* s1 = AddSphereToWorld(Vector3(10,30,10), 1, 1);
 	GameObject* s2 = AddCubeToWorld(Vector3(15, 30, 10), Vector3(1,1,1), false, 1);
+	timer = new GameTimer();
+}
+
+void TutorialGame::InitLevel2() {
+	//AddPusher(Vector3(0,10,0), Vector3(1,2,4), Quaternion(1,1,1,1), false);
+
+	GameObject* s1 = AddSphereToWorld(Vector3(10, 30, 10), 1, 1);
+	GameObject* s2 = AddCubeToWorld(Vector3(15, 30, 10), Vector3(1, 1, 1), false, 1);
+	timer = new GameTimer();
 }
 
 void TutorialGame::AddPusher(Vector3 pos, Vector3 pusherDims,  Quaternion rot, bool startCoiled) {
 	GameObject* s1 = AddSphereToWorld(pos, 1, 0);
-	GameObject* s2 = AddCubeToWorld(pos + rot * Vector3(5,0,0), pusherDims, true, 1);
+	GameObject* s2 = AddCubeToWorld(pos + rot * Vector3(5,0,0), pusherDims, true, 1, Layer::Clickable);
 	s2->GetTransform().SetOrientation(rot);
-	Spring* spr = new Spring(s1, s2, 5, 35, true);
+	Spring* spr = new Spring(s1, s2, 5, 300, startCoiled);
 	world->AddConstraint(spr);
 	pushers.emplace_back(spr);
 }
@@ -462,7 +491,7 @@ void TutorialGame::InitGameExamples() {
 
 GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	float radius = 1.0f;
-	GameObject* sphere = new GameObject();
+	GameObject* sphere = new GameObject("Player", Layer::Player);
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
 	SphereVolume* volume = new SphereVolume(radius);
@@ -509,7 +538,7 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
 }
 
 GameObject* TutorialGame::AddBonusToWorld(const Vector3& position) {
-	GameObject* apple = new GameObject();
+	Coin* apple = new Coin();
 
 	SphereVolume* volume = new SphereVolume(0.25f);
 	apple->SetBoundingVolume((CollisionVolume*)volume);
@@ -621,25 +650,3 @@ void TutorialGame::MoveSelectedObject() {
 		}
 	}
 }
-
-class GameMenu : public PushdownState {
-	void OnAwake() override {
-		std::cout << "Menu awake\n";
-	}
-
-	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
-		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::UP)) {
-
-		}
-
-		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::DOWN)) {
-
-		}
-
-		if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::RETURN)) {
-
-		}
-
-		return PushdownResult::NoChange;
-	}
-};

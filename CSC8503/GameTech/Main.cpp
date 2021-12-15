@@ -2,6 +2,8 @@
 
 #include "../CSC8503Common/StateMachine.h"
 #include "../CSC8503Common/StateTransition.h"
+#include "../CSC8503Common/PushdownMachine.h"
+#include "../CSC8503Common/GameMenu.h"
 #include "../CSC8503Common/State.h"
 
 #include "../CSC8503Common/NavigationGrid.h"
@@ -34,7 +36,10 @@ int main() {
 	w->LockMouseToWindow(true);
 
 	TutorialGame* g = new TutorialGame();
+	PushdownMachine machine(new GameMenu(g));
+
 	w->GetTimer()->GetTimeDeltaSeconds(); //Clear the timer so we don't get a larget first dt!
+
 	while (w->UpdateWindow() && !Window::GetKeyboard()->KeyDown(KeyboardKeys::ESCAPE)) {
 		float dt = w->GetTimer()->GetTimeDeltaSeconds();
 		if (dt > 0.1f) {
@@ -54,7 +59,11 @@ int main() {
 
 		w->SetTitle("Gametech frame time:" + std::to_string(1000.0f * dt));
 
-		g->UpdateGame(dt);
+		//g->UpdateGame(dt);
+
+		if (!machine.Update(dt)) {
+			return 0;
+		}
 	}
 	Window::DestroyGameWindow();
 }

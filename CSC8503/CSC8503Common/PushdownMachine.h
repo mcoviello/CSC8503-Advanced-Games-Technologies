@@ -1,24 +1,28 @@
-#pragma once
+#pragma once 
 #include <stack>
-#include "../../Common/Window.h"
 
 namespace NCL {
-	namespace CSC8503 {
-		class PushdownState;
+namespace CSC8503 {
+	class PushdownState;
 
-		class PushdownMachine
-		{
-		public:
-			PushdownMachine();
-			~PushdownMachine();
+	class PushdownMachine {
+	public:
+		PushdownMachine(PushdownState* initialState) {
+			this->initialState = initialState;
 
-			void Update();
+		}
+		~PushdownMachine() {}
 
-		protected:
-			PushdownState * activeState;
+		bool Update(float dt);
 
-			std::stack<PushdownState*> stateStack;
-		};
-	}
+	protected:
+		PushdownState* activeState;
+		PushdownState* initialState;
+
+		std::stack <PushdownState*> stateStack;
+
+	};
+
 }
 
+}

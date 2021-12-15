@@ -12,9 +12,18 @@ using std::vector;
 namespace NCL {
 	namespace CSC8503 {
 
+		enum Layer {
+			Player = 1,
+			StaticObjects = 2,
+			Clickable = 4,
+			Other = 8,
+			IgnoreAllCollisions = 16,
+			Collectable = 32
+		};
+
 		class GameObject	{
 		public:
-			GameObject(string name = "");
+			GameObject(string name = "", Layer layer = Layer::Other);
 			~GameObject();
 
 			void SetBoundingVolume(CollisionVolume* vol) {
@@ -61,6 +70,14 @@ namespace NCL {
 				//std::cout << "OnCollisionEnd event occured!\n";
 			}
 
+			Layer GetLayer() {
+				return layer;
+			}
+
+			void SetLayer(Layer layer) {
+				this->layer = layer;
+			}
+
 			bool GetBroadphaseAABB(Vector3&outsize) const;
 
 			void UpdateBroadphaseAABB();
@@ -83,6 +100,7 @@ namespace NCL {
 			bool	isActive;
 			int		worldID;
 			string	name;
+			Layer layer;
 
 			Vector3 broadphaseAABB;
 		};

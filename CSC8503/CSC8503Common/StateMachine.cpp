@@ -11,6 +11,12 @@ StateMachine::StateMachine()
 
 StateMachine::~StateMachine()
 {
+	for (auto& i : allStates) {
+		delete i;
+	}
+	for (auto& i : allTransitions) {
+		delete i.second;
+	}
 }
 
 void StateMachine::AddState(State* s) {
@@ -24,18 +30,20 @@ void StateMachine::AddTransition(StateTransition* t) {
 	allTransitions.insert(std::make_pair(t->GetSourceState(), t));
 }
 
-void StateMachine::Update() {
+void StateMachine::Update(float dt) {
 	if (activeState) {
-		activeState->Update();
-	
+		activeState->Update(dt);
 		//Get the transition set starting from this state node;
-		std::pair<TransitionIterator, TransitionIterator> range = allTransitions.equal_range(activeState);
-
+		std::pair <TransitionIterator, TransitionIterator > range =
+		allTransitions.equal_range(activeState);
+		// Iterate through them all
 		for (auto& i = range.first; i != range.second; ++i) {
-			if (i->second->CanTransition()) {
-				State* newState = i->second->GetDestinationState();
+			if (i->second->CanTransition()) { //some transition is true!
+				State * newState = i->second->GetDestinationState();
 				activeState = newState;
+				
 			}
+			
 		}
 	}
 }
