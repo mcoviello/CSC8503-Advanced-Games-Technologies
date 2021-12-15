@@ -458,7 +458,7 @@ void TutorialGame::InitLevel1() {
 	AddFloorToWorld(Vector3(0, 0, 0));
 	AddPusher(Vector3(30,5,0), Vector3(1,2,4), Quaternion(1,0,0,0), false);
 	AddPusher(Vector3(60,5,0), Vector3(1,2,4), Quaternion(0,0,1,0), true);
-	AddBonusToWorld(Vector3(45, 5, 0));
+	AddBonusToWorld(Vector3(45, 3, 0));
 	AddPlayerToWorld(Vector3(34, 10, 0));
 	
 	GameObject* s1 = AddSphereToWorld(Vector3(10,30,10), 1, 1);
@@ -578,7 +578,7 @@ bool TutorialGame::SelectObject() {
 		}
 	}
 	if (inSelectionMode) {
-		renderer->DrawString("Press Q to change to camera mode!", Vector2(5, 85));
+		//renderer->DrawString("Press Q to change to camera mode!", Vector2(5, 85));
 
 		if (Window::GetMouse()->ButtonDown(NCL::MouseButtons::LEFT)) {
 			if (selectionObject) {	//set colour to deselected;
@@ -604,25 +604,21 @@ bool TutorialGame::SelectObject() {
 		renderer->DrawString("Press Q to change to select mode!", Vector2(5, 85));
 	}
 
-	if (lockedObject) {
-		renderer->DrawString("Press L to unlock object!", Vector2(5, 80));
+	if(selectionObject){
+		renderer->DrawString("Name: " + selectionObject->GetName(), Vector2(1, 75));
+		Transform trans = selectionObject->GetTransform();
+		Vector3 pos = trans.GetPosition();
+		renderer->DrawString("Position: " + std::to_string(int(pos.x)) + ", " +
+			std::to_string((int)pos.y) + ", " + std::to_string((int)pos.z), Vector2(1, 80));
+
+		Vector3 rot = trans.GetOrientation().ToEuler();
+		renderer->DrawString("Rotation: " + std::to_string(int(rot.x)) + ", " +
+			std::to_string((int)rot.y) + ", " + std::to_string((int)rot.z), Vector2(1, 85));
+
+		Debug::DrawLine(pos, pos + selectionObject->GetPhysicsObject()->GetLinearVelocity(), Vector4(1,0,1,1));
+		DebugDrawCollider(selectionObject->GetBoundingVolume(), &trans);
 	}
 
-	else if(selectionObject){
-		renderer->DrawString("Press L to lock selected object object!", Vector2(5, 80));
-	}
-
-	if (Window::GetKeyboard()->KeyPressed(NCL::KeyboardKeys::L)) {
-		if (selectionObject) {
-			if (lockedObject == selectionObject) {
-				lockedObject = nullptr;
-			}
-			else {
-				lockedObject = selectionObject;
-			}
-		}
-
-	}
 
 	return false;
 }
