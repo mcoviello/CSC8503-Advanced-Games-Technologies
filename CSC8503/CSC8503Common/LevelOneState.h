@@ -9,9 +9,10 @@ namespace NCL {
 			LevelOneState(TutorialGame* game) : game(game) {};
 
 			PushdownResult OnUpdate(float dt, PushdownState** newState) override {
-				if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
+				if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE) || game->goalReached) {
 					return PushdownResult::Pop; 
 				}
+
 
 				game->UpdateGame(dt);
 				return PushdownResult::NoChange;

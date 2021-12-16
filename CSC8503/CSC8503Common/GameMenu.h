@@ -11,26 +11,42 @@ namespace NCL {
 		public:
 			GameMenu(TutorialGame* game) : game(game) {};
 			PushdownResult OnUpdate(float dt, PushdownState **newState) override {
-				if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::UP)) {
-					curOption = (curOption + 1) % noOfOptions;
-				}
-				
-				if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::DOWN)) {
-					curOption = abs((curOption - 1) % noOfOptions);
-				}
+				if (game->goalReached) {
+					game->ShowScore(dt);
 
-				if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::RETURN)) {
-					switch (curOption) {
-					case 0:
-						*newState = new LevelOneState(game);
-						return PushdownResult::Push;
-					case 1:
-						*newState = new LevelTwoState(game);
-						return PushdownResult::Push;
+
+					if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
+						game->goalReached = false;
 					}
 				}
+				else {
+					if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::UP)) {
+						curOption = curOption - 1 < 0 ? noOfOptions - 1 : curOption - 1;
+					}
 
-				game->Menu(curOption, dt);
+					if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::DOWN)) {
+						curOption = (curOption + 1) % noOfOptions;
+					}
+
+					if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::RETURN)) {
+						switch (curOption) {
+						case 0:
+							*newState = new LevelOneState(game);
+							return PushdownResult::Push;
+						case 1:
+							*newState = new LevelTwoState(game);
+							return PushdownResult::Push;
+						case 2:
+							game->exitGame = true;
+						}
+					}
+
+					if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
+						game->exitGame = true;
+					}
+
+					game->Menu(curOption, dt);
+				}
 				return PushdownResult::NoChange;
 			};
 
@@ -38,7 +54,7 @@ namespace NCL {
 			};
 		protected:
 			int curOption = 0;
-			int noOfOptions = 2;
+			int noOfOptions = 3;
 			TutorialGame* game;
 		};
 

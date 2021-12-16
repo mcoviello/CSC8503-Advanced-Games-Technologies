@@ -5,6 +5,9 @@
 namespace NCL {
 	namespace CSC8503 {
 		class Spring;
+		class VerticalBlocker;
+		class PlayerObj;
+		class Goal;
 		class TutorialGame		{
 		public:
 			TutorialGame();
@@ -15,6 +18,10 @@ namespace NCL {
 			void InitLevel1();
 			void InitLevel2();
 			void Menu(int option, float dt);
+			void ShowScore(float dt);
+
+			bool exitGame = false;
+			bool goalReached;
 
 		protected:
 			void InitialiseAssets();
@@ -22,11 +29,7 @@ namespace NCL {
 			void InitCamera();
 			void UpdateKeys();
 
-			void MainMenu();
-
 			void InitWorld();
-
-			void InitGameExamples();
 
 			void BridgeConstraintTest();
 	
@@ -37,11 +40,13 @@ namespace NCL {
 			void DebugDrawCollider(const CollisionVolume* c, Transform* worldTransform);
 			void DebugDrawCapsule(CapsuleVolume* a, Transform* worldTransform);
 
-			GameObject* AddFloorToWorld(const Vector3& position);
+			GameObject* AddFloorToWorld(const Vector3& position, const Vector3& dims, const Quaternion& rotation, float elasticity = 0.5f);
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, float elasticity = 0.66f, Layer layer = Layer::Other);
 			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass = 10.0f, Layer layer = Layer::Other);
-
-			void AddPusher(Vector3 pos, Vector3 pusherDims, Quaternion rot, bool startCoiled);
+			GameObject* AddSwitchToWorld(const Vector3& position);
+			void AddPusher(Vector3 pos, Vector3 pusherDims, Quaternion rot, bool startCoiled, float springForce = 200.0f, float length = 5.0f);
+			VerticalBlocker* AddVerticalBlockerToWorld(const Vector3& position, const Quaternion& rotation);
+			Goal* AddGoal(const Vector3& position);
 
 			GameObject* AddCapsuleToWorld(const Vector3& position, float halfHeight, float radius, float inverseMass = 10.0f);
 
@@ -54,6 +59,7 @@ namespace NCL {
 			GameWorld*			world;
 
 			std::vector<Spring*> pushers;
+			std::vector<GameObject*> stateObjects;
 
 			bool useGravity;
 			bool inSelectionMode;
@@ -84,7 +90,9 @@ namespace NCL {
 			}
 
 			GameTimer* timer;
-			float gameStartedTime;
+			float finishTime;
+
+			PlayerObj* player;
 
 		};
 	}

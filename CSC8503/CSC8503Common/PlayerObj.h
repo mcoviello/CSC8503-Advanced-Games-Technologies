@@ -3,14 +3,19 @@
 
 namespace NCL {
 	namespace CSC8503 {
-		class Player : public GameObject {
+		class PlayerObj : public GameObject {
 		public:
-			Player() {
+			PlayerObj(std::string name = "Player") : GameObject(name) {
 				layer = Layer::Player;
 			};
+
 			virtual void OnCollisionBegin(GameObject* otherObject) override {
 				if (otherObject->GetName() == "Coin") {
 					score += 10;
+				}
+
+				if (otherObject->GetName() == "Goal") {
+					goalReached = true;
 				}
 			}
 
@@ -25,8 +30,13 @@ namespace NCL {
 			int GetScore() {
 				return score;
 			}
+
+			bool GoalReached() {
+				return goalReached;
+			}
 		protected:
-			int score = 0
+			int score = 0;
+			bool goalReached = false;
 		};
 	}
 }

@@ -5,8 +5,8 @@ namespace NCL {
 	namespace CSC8503 {
 		class Coin : public GameObject {
 		public:
-			Coin() {
-				layer = Layer::Collectable;
+			Coin(std::string name = "Coin") : GameObject(name){
+				layer = Layer::DontResolveCollisions | Layer::AntiGravity;
 			};
 			virtual void OnCollisionBegin(GameObject* otherObject) override {
 				if (otherObject->GetName() == "Player") {

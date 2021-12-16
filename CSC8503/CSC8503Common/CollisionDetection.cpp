@@ -637,8 +637,11 @@ bool CollisionDetection::OBBSphereIntersection(const OBBVolume& volumeA, const T
 
 bool CollisionDetection::OBBAABBIntersection(const OBBVolume& volumeA, const Transform& worldTransformA,
 	const AABBVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
-	return OBBIntersection(volumeA, worldTransformA, OBBVolume(volumeB.GetHalfDimensions()), 
+	bool collision = OBBIntersection(volumeA, worldTransformA, OBBVolume(volumeB.GetHalfDimensions()), 
 		Transform(worldTransformB).SetOrientation(Quaternion(1,0,0,0)), collisionInfo);
+	//Remove rotation offset from AABB
+	collisionInfo.point.localB = Vector3();
+	return collision;
 
 }
 

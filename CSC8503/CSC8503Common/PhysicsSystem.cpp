@@ -315,7 +315,7 @@ void PhysicsSystem::NarrowPhase() {
 		CollisionDetection::CollisionInfo info = *i;
 
 		int staticMask = Layer::StaticObjects | Layer::IgnoreAllCollisions;
-		int collisionMask = Layer::Collectable;
+		int collisionMask = Layer::DontResolveCollisions;
 
 		//Dont check collisions between static objects
 		if (((*i).a->GetLayer() & staticMask) && (*i).b->GetLayer() & staticMask) {
@@ -357,7 +357,7 @@ void PhysicsSystem::IntegrateAccel(float dt) {
 		Vector3 accel = force * inverseMass;
 
 		// -- Linear Acceleration -- //
-		if (applyGravity && inverseMass > 0 && !(Layer::Collectable & (*i)->GetLayer())) {
+		if (applyGravity && inverseMass > 0 && !(Layer::AntiGravity & (*i)->GetLayer())) {
 			accel += gravity; // dont move infinitely heavy objects
 		}
 

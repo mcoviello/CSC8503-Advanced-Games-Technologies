@@ -11,14 +11,16 @@ using std::vector;
 
 namespace NCL {
 	namespace CSC8503 {
-
+		//TODO::This can be improved, doesn't fully utilise bitmasking
 		enum Layer {
 			Player = 1,
 			StaticObjects = 2,
 			Clickable = 4,
 			Other = 8,
 			IgnoreAllCollisions = 16,
-			Collectable = 32
+			DontResolveCollisions = 32,
+			AntiGravity = 64
+
 		};
 
 		class GameObject	{
@@ -70,11 +72,15 @@ namespace NCL {
 				//std::cout << "OnCollisionEnd event occured!\n";
 			}
 
-			Layer GetLayer() {
+			virtual void OnSelect() {
+
+			}
+
+			int GetLayer() {
 				return layer;
 			}
 
-			void SetLayer(Layer layer) {
+			void SetLayer(int layer) {
 				this->layer = layer;
 			}
 
@@ -100,7 +106,7 @@ namespace NCL {
 			bool	isActive;
 			int		worldID;
 			string	name;
-			Layer layer;
+			int layer;
 
 			Vector3 broadphaseAABB;
 		};
