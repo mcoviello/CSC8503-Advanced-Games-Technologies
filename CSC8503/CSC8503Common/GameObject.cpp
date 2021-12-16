@@ -3,7 +3,7 @@
 
 using namespace NCL::CSC8503;
 
-GameObject::GameObject(string objectName, Layer layer)	{
+GameObject::GameObject(string objectName, int layer)	{
 	name			= objectName;
 	worldID			= -1;
 	isActive		= true;

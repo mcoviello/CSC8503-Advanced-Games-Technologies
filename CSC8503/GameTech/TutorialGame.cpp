@@ -10,8 +10,11 @@
 #include"../CSC8503Common/Goal.h"
 #include"../CSC8503Common/Switch.h"
 #include "../CSC8503Common/VerticalBlocker.h"
+#include "../CSC8503Common/HorizontalBlocker.h"
 #include "../CSC8503Common/PlayerObj.h"
 #include "../CSC8503Common/PushdownState.h"
+#include "../CSC8503Common/NavigationGrid.h"
+#include "../CSC8503Common/NavigationPath.h"
 
 using namespace NCL;
 using namespace CSC8503;
@@ -74,6 +77,19 @@ TutorialGame::~TutorialGame()	{
 	delete world;
 }
 
+void TutorialGame::ClearWorld() {
+
+	pushers.clear();
+	stateObjects.clear();
+	world->ClearAndErase();
+	physics->Clear();
+
+	selectionObject = nullptr;
+	lockedObject = nullptr;
+
+	timer = new GameTimer();
+}
+
 void TutorialGame::UpdateGame(float dt) {
 	if (!inSelectionMode) {
 		world->GetMainCamera()->UpdateCamera(dt);
@@ -83,11 +99,19 @@ void TutorialGame::UpdateGame(float dt) {
 	UpdateKeys();
 
 	if (player) {
+
+		PathFind(player->GetTransform().GetPosition() + Vector3(10,0,10), Vector3(160, 0, 160));
+		DebugDisplayPath();
 		Debug::Print("Score: " + std::to_string(player->GetScore()), Vector2(5, 10));
 		Debug::Print("Time: " + std::to_string((int)timer->GetTotalTimeSeconds()) + "s", Vector2(5, 15));
 		if (player->GoalReached()) {
 			goalReached = true;
 			finishTime = timer->GetTotalTimeSeconds();
+			finishScore = player->GetScore();
+		}
+
+		if (timer->GetTotalTimeSeconds() > 60) {
+			gameLost = true;
 		}
 	}
 
@@ -162,14 +186,16 @@ void TutorialGame::Menu(int option, float dt) {
 
 }
 
-void TutorialGame::ShowScore(float dt) {
+void TutorialGame::ShowScore(bool won, float dt) {
 	Vector4 selectedCol = Vector4(1, 0.5, 0.5, 1);
 
-	Debug::Print("You Reached The Goal!", Vector2(30, 30));
+	Debug::Print(won ? "You Reached The Goal!" : "You Ran Out Of Time!", Vector2(30, 30));
 	Debug::Print("_____________________", Vector2(30, 35));
-	Debug::Print("Score: " + std::to_string(player->GetScore()), Vector2(30, 40));
-	Debug::Print("Time Taken: " + std::to_string(finishTime), Vector2(30, 45));
-	Debug::Print("Press [Esc] to return to the Main Menu", Vector2(30, 55));
+	Debug::Print("Score: " + std::to_string(finishScore), Vector2(30, 40));
+	if (won) {
+		Debug::Print("Time Taken: " + std::to_string(finishTime), Vector2(30, 45));
+	}
+	Debug::Print("Press [Esc] to return to the Main Menu", Vector2(12, 55));
 
 	Debug::FlushRenderables(dt);
 	renderer->Update(dt);
@@ -355,8 +381,8 @@ void TutorialGame::InitCamera() {
 /*
 A single function to add a large immoveable cube to the bottom of our world
 */
-GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, const Vector3& dims, const Quaternion& rotation, float elasticity) {
-	GameObject* floor = new GameObject("Floor", Layer::StaticObjects);
+GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, const Vector3& dims, const Quaternion& rotation, float elasticity, Vector4 col, string name) {
+	GameObject* floor = new GameObject(name, Layer::StaticObjects);
 
 	OBBVolume* volume	= new OBBVolume(dims);
 	floor->GetTransform().SetOrientation(rotation);
@@ -366,6 +392,7 @@ GameObject* TutorialGame::AddFloorToWorld(const Vector3& position, const Vector3
 		.SetPosition(position);
 
 	floor->SetRenderObject(new RenderObject(&floor->GetTransform(), cubeMesh, basicTex, basicShader));
+	floor->GetRenderObject()->SetColour(col);
 	floor->SetPhysicsObject(new PhysicsObject(&floor->GetTransform(), floor->GetBoundingVolume()));
 
 	floor->GetPhysicsObject()->SetInverseMass(0);
@@ -383,7 +410,29 @@ VerticalBlocker* TutorialGame::AddVerticalBlockerToWorld(const Vector3& position
 	s->SetBoundingVolume(new CapsuleVolume(40, 10));
 
 	s->SetRenderObject(new RenderObject(&s->GetTransform(), capsuleMesh, basicTex, basicShader));
+	s->GetRenderObject()->SetColour(Vector4(0, 1, 0, 1));
 	s->SetPhysicsObject(new PhysicsObject(&s->GetTransform(), s->GetBoundingVolume()));
+	s->GetPhysicsObject()->SetElasticity(1.6);
+
+	s->GetPhysicsObject()->SetInverseMass(0.1);
+	s->GetPhysicsObject()->SetElasticity(1);
+	world->AddGameObject(s);
+	stateObjects.emplace_back(s);
+
+	return s;
+}
+
+HorizontalBlocker* TutorialGame::AddHorizontalBlockerToWorld(const Vector3& position) {
+	HorizontalBlocker* s = new HorizontalBlocker();
+	Vector3 dims = Vector3(10, 10, 1);
+	s->SetLayer(Layer::AntiGravity);
+	s->GetTransform().SetPosition(position).SetScale(dims * 2);
+	s->SetBoundingVolume((CollisionVolume*)new AABBVolume(Vector3(10,10, 1)));
+
+	s->SetRenderObject(new RenderObject(&s->GetTransform(), cubeMesh, basicTex, basicShader));
+	s->GetRenderObject()->SetColour(Vector4(0,1,0,1));
+	s->SetPhysicsObject(new PhysicsObject(&s->GetTransform(), s->GetBoundingVolume()));
+	s->GetPhysicsObject()->SetElasticity(1.6);
 
 	s->GetPhysicsObject()->SetInverseMass(0.1);
 	s->GetPhysicsObject()->SetElasticity(1);
@@ -400,7 +449,7 @@ rigid body representation. This and the cube function will let you build a lot o
 physics worlds. You'll probably need another function for the creation of OBB cubes too.
 
 */
-GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass, float elasticity, Layer layer) {
+GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass, float elasticity, int layer) {
 	GameObject* sphere = new GameObject();
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
@@ -425,8 +474,8 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 
 GameObject* TutorialGame::AddSwitchToWorld(const Vector3& position) {
 	GameObject* sw = new Switch();
-	Vector3 sphereSize = Vector3(1, 1, 1);
-	SphereVolume* volume = new SphereVolume(1);
+	Vector3 sphereSize = Vector3(2, 2, 2);
+	SphereVolume* volume = new SphereVolume(2);
 	sw->SetBoundingVolume((CollisionVolume*)volume);
 	sw->GetTransform()
 		.SetScale(sphereSize)
@@ -465,7 +514,7 @@ GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float halfH
 
 }
 
-GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass, Layer layer) {
+GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass, int layer) {
 	GameObject* cube = new GameObject("", layer);
 
 	CollisionVolume* volume;
@@ -492,45 +541,71 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 
 void TutorialGame::InitLevel1() {
 
-	pushers.clear();
-	stateObjects.clear();
-	world->ClearAndErase();
-	physics->Clear();
+	ClearWorld();
+	finishScore = 0;
+	finishTime = 0;
 
-	goalReached = false;
+	//Floor
+	AddFloorToWorld(Vector3(0, -3, 0), Vector3(20, 1, 20), Quaternion(1, 0, 0, 0), 0.7,Vector4(0.1,0.1,0.1,1));
+	AddFloorToWorld(Vector3(38, -10.6, 0), Vector3(20, 1, 20), Quaternion(1, -0.2f, 0, 0),0.7, Vector4(0.1, 0.1, 0.1, 1));
+	AddFloorToWorld(Vector3(75, -23, 0), Vector3(20, 1, 20), Quaternion(1, 0.4f, 0, 0),0.7, Vector4(0.1, 0.1, 0.1, 1));
+	AddFloorToWorld(Vector3(47, -50.3, 0), Vector3(20, 1, 20), Quaternion(1, 0.4f, 0, 0),0.7, Vector4(0.1, 0.1, 0.1, 1));
+	AddFloorToWorld(Vector3(9, -45, 70), Vector3(15, 1, 20), Quaternion(1, 0, 0, 0), 1.4f, Vector4(0.1, 1, 0.1, 1), "Bouncy Floor");
+	AddFloorToWorld(Vector3(9, -45, 110), Vector3(15, 1, 20), Quaternion(1, 0, 0, 0), 1.4f, Vector4(0.1, 1, 0.1, 1), "Bouncy Floor");
 
-	AddFloorToWorld(Vector3(0, -3, 0), Vector3(20, 1, 20), Quaternion(1, 0, 0, 0));
-	AddPusher(Vector3(-6,0.5f,0), Vector3(1,2,4), Quaternion(1,0,0,0), true);
-	AddFloorToWorld(Vector3(38, -10.6, 0), Vector3(20, 1, 20), Quaternion(1, -0.2f, 0, 0));
-	AddFloorToWorld(Vector3(75, -23, 0), Vector3(20, 1, 20), Quaternion(1, 0.4f, 0, 0));
-	AddFloorToWorld(Vector3(47, -50.3, 0), Vector3(20, 1, 20), Quaternion(1, 0.4f, 0, 0));
-	AddPusher(Vector3(9, -70, 0), Vector3(20,1,20), Quaternion(1,1,0,0), true, 400);
-	AddPusher(Vector3(9, -35, -15), Vector3(20,5,1), Quaternion(1,0,1,0), true, 250, 10);
-	AddFloorToWorld(Vector3(9, -45, 70), Vector3(15, 1, 20), Quaternion(1, 0, 0, 0), 1.0f);
-	AddFloorToWorld(Vector3(9, -45, 110), Vector3(15, 1, 20), Quaternion(1, 0, 0, 0), 1.0f);
+	//Pushers
+	AddPusher(Vector3(-6,0.1f,0), Vector3(1,2,4), Quaternion(1,0,0,0), true);
+	AddPusher(Vector3(9, -70, 0), Vector3(20,1,20), Quaternion(1,1,0,0), true, 200, 7);
+	AddPusher(Vector3(12, -35, -15), Vector3(20,5,1), Quaternion(1,0,1,0), true, 250, 10);
+
+	//Blockers
 	AddVerticalBlockerToWorld(Vector3(9, -15, 35), Quaternion::EulerAnglesToQuaternion(0,0,90));
+	AddHorizontalBlockerToWorld(Vector3(20, 1, 13));
+
+	//Coins
+	AddBonusToWorld(Vector3(30, -2, 0), Quaternion::EulerAnglesToQuaternion(0,90,0));
+	AddBonusToWorld(Vector3(50, -38, 0), Quaternion::EulerAnglesToQuaternion(0,90,0));
+
 	AddPlayerToWorld(Vector3(0, 0, 0));
+
 	AddGoal(Vector3(9, -40, 110));
+
 	timer = new GameTimer();
 }
 
 void TutorialGame::InitLevel2() {
 
-	pushers.clear();
-	stateObjects.clear();
-	world->ClearAndErase();
-	physics->Clear();
+	ClearWorld();
+	finishScore = 0;
+	finishTime = 0;
 
 	goalReached = false;
+	gameLost = false;
 
-	GameObject* s1 = AddSphereToWorld(Vector3(10, 30, 10), 1, 1);
-	GameObject* s2 = AddCubeToWorld(Vector3(15, 30, 10), Vector3(1, 1, 1), false, 1);
+	AddFloorToWorld(Vector3(90, -4, 90), Vector3(90, 4, 90), Quaternion::EulerAnglesToQuaternion(0, 0, 0), 0.5f, Vector4(0.1,0.1,0.1,1));
+	AddFloorToWorld(Vector3(100, 0, 0), Vector3(100, 10, 10), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+	AddFloorToWorld(Vector3(100, 0, 180), Vector3(100, 10, 10), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+	AddFloorToWorld(Vector3(0, 0, 100), Vector3(10, 10, 100), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+	AddFloorToWorld(Vector3(180, 0, 100), Vector3(10, 10, 100), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+	AddFloorToWorld(Vector3(90, 0, 160), Vector3(20, 10, 10), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+	AddFloorToWorld(Vector3(90, 0, 120), Vector3(60, 10, 10), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+	AddFloorToWorld(Vector3(40, 0, 70), Vector3(10, 10, 40), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+	AddFloorToWorld(Vector3(140, 0, 70), Vector3(10, 10, 40), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+	AddFloorToWorld(Vector3(90, 0, 60), Vector3(20, 10, 10), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+	AddFloorToWorld(Vector3(120, 0, 80), Vector3(10, 10, 10), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
+
+	AddVerticalBlockerToWorld(Vector3(90, -10, 140), Quaternion::EulerAnglesToQuaternion(0,0,0));
+
+	AddPlayerToWorld(Vector3(20, 20, 20));
+
+
 	timer = new GameTimer();
 }
 
 void TutorialGame::AddPusher(Vector3 pos, Vector3 pusherDims,  Quaternion rot, bool startCoiled, float springForce, float length) {
 	GameObject* s1 = AddSwitchToWorld(pos);
-	GameObject* s2 = AddCubeToWorld(pos + rot * Vector3(5,0,0), pusherDims, true, 1, Layer::Clickable);
+	GameObject* s2 = AddCubeToWorld(pos + rot * Vector3(5,0,0), pusherDims, true, 1, Layer::Clickable|Layer::AntiGravity);
+	s2->GetRenderObject()->SetColour(Vector4(1,0.5,0.5,1));
 	Spring* spr = new Spring(s1, s2, length, springForce, startCoiled);
 	((Switch*)s1)->SetSpring(spr);
 	world->AddConstraint(spr);
@@ -587,24 +662,26 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
 	return character;
 }
 
-GameObject* TutorialGame::AddBonusToWorld(const Vector3& position) {
-	Coin* apple = new Coin();
+GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, const Quaternion& rot) {
+	Coin* coin = new Coin();
 
 	SphereVolume* volume = new SphereVolume(0.25f);
-	apple->SetBoundingVolume((CollisionVolume*)volume);
-	apple->GetTransform()
+	coin->SetBoundingVolume((CollisionVolume*)volume);
+	coin->GetTransform()
 		.SetScale(Vector3(0.25, 0.25, 0.25))
-		.SetPosition(position);
+		.SetPosition(position)
+		.SetOrientation(rot);
 
-	apple->SetRenderObject(new RenderObject(&apple->GetTransform(), bonusMesh, nullptr, basicShader));
-	apple->SetPhysicsObject(new PhysicsObject(&apple->GetTransform(), apple->GetBoundingVolume()));
+	coin->SetRenderObject(new RenderObject(&coin->GetTransform(), bonusMesh, nullptr, basicShader));
+	coin->GetRenderObject()->SetColour(Vector4(1, 1, 0, 1));
+	coin->SetPhysicsObject(new PhysicsObject(&coin->GetTransform(), coin->GetBoundingVolume()));
 
-	apple->GetPhysicsObject()->SetInverseMass(1.0f);
-	apple->GetPhysicsObject()->InitSphereInertia();
+	coin->GetPhysicsObject()->SetInverseMass(1.0f);
+	coin->GetPhysicsObject()->InitSphereInertia();
 
-	world->AddGameObject(apple);
+	world->AddGameObject(coin);
 
-	return apple;
+	return coin;
 }
 
 Goal* TutorialGame::AddGoal(const Vector3& position) {
@@ -686,6 +763,8 @@ bool TutorialGame::SelectObject() {
 	}
 	else {
 		renderer->DrawString("Press Q to change to select mode!", Vector2(5, 85));
+		renderer->DrawString("Press L to toggle the pushers,", Vector2(5, 90));
+		renderer->DrawString("or click on the purple buttons!", Vector2(5, 95));
 	}
 
 	if(selectionObject){
@@ -727,5 +806,27 @@ void TutorialGame::MoveSelectedObject() {
 				selectionObject->GetPhysicsObject()->AddForceAtPosition(ray.GetDirection() * forceMagnitude, closestCollision.collidedAt);
 			}
 		}
+	}
+}
+
+void TutorialGame::PathFind(Vector3 from, Vector3 to) {
+	NavigationGrid grid("TestGrid1.txt");
+	pathNodes.clear();
+	NavigationPath outPath;
+	bool found = grid.FindPath(from, to, outPath);
+	Vector3 pos;
+	while (outPath.PopWaypoint(pos)) {
+		pathNodes.push_back(pos);
+
+	}
+}
+
+void TutorialGame::DebugDisplayPath() {
+	for (int i = 1; i < pathNodes.size(); ++i) {
+		Vector3 a = pathNodes[i - 1];
+		Vector3 b = pathNodes[i];
+
+		Debug::DrawLine(a, b, Vector4(0, 1, 0, 1));
+
 	}
 }

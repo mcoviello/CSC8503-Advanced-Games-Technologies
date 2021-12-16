@@ -25,7 +25,7 @@ namespace NCL {
 
 		class GameObject	{
 		public:
-			GameObject(string name = "", Layer layer = Layer::Other);
+			GameObject(string name = "", int layer = Layer::Other);
 			~GameObject();
 
 			void SetBoundingVolume(CollisionVolume* vol) {

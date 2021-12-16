@@ -133,7 +133,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AABBVolume.h" />
+    <ClInclude Include="Enemy.h" />
     <ClInclude Include="Goal.h" />
+    <ClInclude Include="HorizontalBlocker.h" />
+    <ClInclude Include="StateGameObject.h" />
     <ClInclude Include="VerticalBlocker.h" />
     <ClInclude Include="Switch.h" />
     <ClInclude Include="CapsuleVolume.h" />
@@ -171,8 +174,10 @@
   <ItemGroup>
     <ClCompile Include="CollisionDetection.cpp" />
     <ClCompile Include="Debug.cpp" />
+    <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="GameWorld.cpp" />
+    <ClCompile Include="HorizontalBlocker.cpp" />
     <ClCompile Include="NavigationGrid.cpp" />
     <ClCompile Include="NavigationMesh.cpp" />
     <ClCompile Include="PhysicsObject.cpp" />

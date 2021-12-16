@@ -6,7 +6,10 @@ namespace NCL {
 	namespace CSC8503 {
 		class Spring;
 		class VerticalBlocker;
+		class HorizontalBlocker;
+		class StateGameObject;
 		class PlayerObj;
+		class EnemyObj;
 		class Goal;
 		class TutorialGame		{
 		public:
@@ -18,20 +21,18 @@ namespace NCL {
 			void InitLevel1();
 			void InitLevel2();
 			void Menu(int option, float dt);
-			void ShowScore(float dt);
+			void ShowScore(bool won, float dt);
+			void ClearWorld();
 
 			bool exitGame = false;
 			bool goalReached;
+			bool gameLost;
 
 		protected:
 			void InitialiseAssets();
 
 			void InitCamera();
 			void UpdateKeys();
-
-			void InitWorld();
-
-			void BridgeConstraintTest();
 	
 			bool SelectObject();
 			void MoveSelectedObject();
@@ -40,26 +41,31 @@ namespace NCL {
 			void DebugDrawCollider(const CollisionVolume* c, Transform* worldTransform);
 			void DebugDrawCapsule(CapsuleVolume* a, Transform* worldTransform);
 
-			GameObject* AddFloorToWorld(const Vector3& position, const Vector3& dims, const Quaternion& rotation, float elasticity = 0.5f);
-			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, float elasticity = 0.66f, Layer layer = Layer::Other);
-			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass = 10.0f, Layer layer = Layer::Other);
+			void PathFind(Vector3 from, Vector3 to);
+
+			void DebugDisplayPath();
+
+			GameObject* AddFloorToWorld(const Vector3& position, const Vector3& dims, const Quaternion& rotation, float elasticity = 0.5f, Vector4 col = Vector4(1,1,1,1), string name = "Floor");
+			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, float elasticity = 0.66f, int layer = Layer::Other);
+			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, bool axisAligned,float inverseMass = 10.0f, int layer = Layer::Other);
 			GameObject* AddSwitchToWorld(const Vector3& position);
 			void AddPusher(Vector3 pos, Vector3 pusherDims, Quaternion rot, bool startCoiled, float springForce = 200.0f, float length = 5.0f);
 			VerticalBlocker* AddVerticalBlockerToWorld(const Vector3& position, const Quaternion& rotation);
+			HorizontalBlocker* AddHorizontalBlockerToWorld(const Vector3& position);
 			Goal* AddGoal(const Vector3& position);
 
 			GameObject* AddCapsuleToWorld(const Vector3& position, float halfHeight, float radius, float inverseMass = 10.0f);
 
 			GameObject* AddPlayerToWorld(const Vector3& position);
 			GameObject* AddEnemyToWorld(const Vector3& position);
-			GameObject* AddBonusToWorld(const Vector3& position);
+			GameObject* AddBonusToWorld(const Vector3& position, const Quaternion& rot);
 
 			GameTechRenderer*	renderer;
 			PhysicsSystem*		physics;
 			GameWorld*			world;
 
 			std::vector<Spring*> pushers;
-			std::vector<GameObject*> stateObjects;
+			std::vector<StateGameObject*> stateObjects;
 
 			bool useGravity;
 			bool inSelectionMode;
@@ -91,8 +97,12 @@ namespace NCL {
 
 			GameTimer* timer;
 			float finishTime;
+			int finishScore;
 
 			PlayerObj* player;
+			EnemyObj* enemy;
+
+			std::vector<Vector3> pathNodes;
 
 		};
 	}

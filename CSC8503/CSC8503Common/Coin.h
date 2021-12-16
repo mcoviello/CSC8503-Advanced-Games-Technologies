@@ -10,7 +10,9 @@ namespace NCL {
 			};
 			virtual void OnCollisionBegin(GameObject* otherObject) override {
 				if (otherObject->GetName() == "Player") {
+					//Hide the coin, ignore all subsequent collisions
 					isActive = false;
+					layer = Layer::IgnoreAllCollisions;
 				}
 			}
 		};

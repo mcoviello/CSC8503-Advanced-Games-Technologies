@@ -3,16 +3,16 @@
 namespace NCL {
 	namespace CSC8503 {
 		class StateMachine;
-		class VerticalBlocker : public StateGameObject {
+		class HorizontalBlocker : public StateGameObject {
 		public:
-			VerticalBlocker();
-			virtual ~VerticalBlocker();
+			HorizontalBlocker();
+			~HorizontalBlocker();
 
 			virtual void Update(float dt) override;
 
 		protected:
-			void MoveUp(float dt);
-			void MoveDown(float dt);
+			void MoveLeft(float dt);
+			void MoveRight(float dt);
 
 			StateMachine* stateMachine;
 			float counter;
