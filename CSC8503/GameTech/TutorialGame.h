@@ -9,7 +9,7 @@ namespace NCL {
 		class HorizontalBlocker;
 		class StateGameObject;
 		class PlayerObj;
-		class EnemyObj;
+		class Enemy;
 		class Goal;
 		class TutorialGame		{
 		public:
@@ -25,7 +25,7 @@ namespace NCL {
 			void ClearWorld();
 
 			bool exitGame = false;
-			bool goalReached;
+			bool won;
 			bool gameLost;
 
 		protected:
@@ -100,7 +100,7 @@ namespace NCL {
 			int finishScore;
 
 			PlayerObj* player;
-			EnemyObj* enemy;
+			Enemy* enemy;
 
 			std::vector<Vector3> pathNodes;
 

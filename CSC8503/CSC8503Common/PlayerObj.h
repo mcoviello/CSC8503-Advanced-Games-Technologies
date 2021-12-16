@@ -15,7 +15,7 @@ namespace NCL {
 				}
 
 				if (otherObject->GetName() == "Goal") {
-					goalReached = true;
+					won = true;
 				}
 			}
 
@@ -32,11 +32,11 @@ namespace NCL {
 			}
 
 			bool GoalReached() {
-				return goalReached;
+				return won;
 			}
 		protected:
 			int score = 0;
-			bool goalReached = false;
+			bool won = false;
 		};
 	}
 }

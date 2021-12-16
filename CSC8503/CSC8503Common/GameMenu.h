@@ -11,12 +11,12 @@ namespace NCL {
 		public:
 			GameMenu(TutorialGame* game) : game(game) {};
 			PushdownResult OnUpdate(float dt, PushdownState **newState) override {
-				if (game->goalReached) {
+				if (game->won) {
 					game->ShowScore(true, dt);
 
 
 					if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
-						game->goalReached = false;
+						game->won = false;
 						game->gameLost = false;
 					}
 				}
@@ -25,7 +25,7 @@ namespace NCL {
 
 
 					if (Window::GetKeyboard()->KeyPressed(KeyboardKeys::ESCAPE)) {
-						game->goalReached = false;
+						game->won = false;
 						game->gameLost = false;
 					}
 				}

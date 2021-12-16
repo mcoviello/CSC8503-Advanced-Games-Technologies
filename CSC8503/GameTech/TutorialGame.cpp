@@ -12,6 +12,7 @@
 #include "../CSC8503Common/VerticalBlocker.h"
 #include "../CSC8503Common/HorizontalBlocker.h"
 #include "../CSC8503Common/PlayerObj.h"
+#include "../CSC8503Common/Enemy.h"
 #include "../CSC8503Common/PushdownState.h"
 #include "../CSC8503Common/NavigationGrid.h"
 #include "../CSC8503Common/NavigationPath.h"
@@ -99,13 +100,10 @@ void TutorialGame::UpdateGame(float dt) {
 	UpdateKeys();
 
 	if (player) {
-
-		PathFind(player->GetTransform().GetPosition() + Vector3(10,0,10), Vector3(160, 0, 160));
-		DebugDisplayPath();
 		Debug::Print("Score: " + std::to_string(player->GetScore()), Vector2(5, 10));
 		Debug::Print("Time: " + std::to_string((int)timer->GetTotalTimeSeconds()) + "s", Vector2(5, 15));
 		if (player->GoalReached()) {
-			goalReached = true;
+			won = true;
 			finishTime = timer->GetTotalTimeSeconds();
 			finishScore = player->GetScore();
 		}
@@ -113,7 +111,32 @@ void TutorialGame::UpdateGame(float dt) {
 		if (timer->GetTotalTimeSeconds() > 60) {
 			gameLost = true;
 		}
+
+		if (enemy) {
+			Vector3 enemyPos = enemy->GetTransform().GetPosition() + Vector3(0, 10, 0);
+			Ray ray = Ray(enemyPos, (player->GetTransform().GetPosition() - enemyPos).Normalised());
+			//Debug::DrawLine(enemy->GetTransform().GetPosition() + Vector3(0, 10, 0), enemy->GetTransform().GetPosition() + player->GetTransform().GetPosition() - enemy->GetTransform().GetPosition());
+			RayCollision closestCollision;
+			if (world->Raycast(ray, closestCollision, true)) {
+				std::cout << ((GameObject*)closestCollision.node)->GetWorldID();
+				if ((PlayerObj*)closestCollision.node == player) {
+					enemy->SetTarget(player);
+				}
+				else {
+					enemy->SetTarget(nullptr);
+				}
+			}
+			else {
+				enemy->SetTarget(nullptr);
+			}
+
+			if (enemy->GetTarget() != nullptr) {
+				PathFind(enemy->GetTransform().GetPosition() + Vector3(10, 0, 10), enemy->GetTarget()->GetTransform().GetPosition() + Vector3(10, 0, 10));
+				DebugDisplayPath();
+			}
+		}
 	}
+
 
 	if (drawColliders) {
 		GameObjectIterator first;
@@ -544,6 +567,7 @@ void TutorialGame::InitLevel1() {
 	ClearWorld();
 	finishScore = 0;
 	finishTime = 0;
+	enemy = nullptr;
 
 	//Floor
 	AddFloorToWorld(Vector3(0, -3, 0), Vector3(20, 1, 20), Quaternion(1, 0, 0, 0), 0.7,Vector4(0.1,0.1,0.1,1));
@@ -579,7 +603,7 @@ void TutorialGame::InitLevel2() {
 	finishScore = 0;
 	finishTime = 0;
 
-	goalReached = false;
+	won = false;
 	gameLost = false;
 
 	AddFloorToWorld(Vector3(90, -4, 90), Vector3(90, 4, 90), Quaternion::EulerAnglesToQuaternion(0, 0, 0), 0.5f, Vector4(0.1,0.1,0.1,1));
@@ -597,6 +621,7 @@ void TutorialGame::InitLevel2() {
 	AddVerticalBlockerToWorld(Vector3(90, -10, 140), Quaternion::EulerAnglesToQuaternion(0,0,0));
 
 	AddPlayerToWorld(Vector3(20, 20, 20));
+	AddEnemyToWorld(Vector3(160, 4, 160));
 
 
 	timer = new GameTimer();
@@ -642,24 +667,27 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
 	float meshSize		= 3.0f;
 	float inverseMass	= 0.5f;
 
-	GameObject* character = new GameObject();
+	Enemy* enemy = new Enemy(pathNodes);
 
-	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize);
-	character->SetBoundingVolume((CollisionVolume*)volume);
+	SphereVolume* volume = new SphereVolume(3);
+	enemy->SetBoundingVolume((CollisionVolume*)volume);
 
-	character->GetTransform()
+	enemy->GetTransform()
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
 
-	character->SetRenderObject(new RenderObject(&character->GetTransform(), enemyMesh, nullptr, basicShader));
-	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
+	enemy->SetRenderObject(new RenderObject(&enemy->GetTransform(), enemyMesh, nullptr, basicShader));
+	enemy->GetRenderObject()->SetColour(Vector4(1,0,0,1));
+	enemy->SetPhysicsObject(new PhysicsObject(&enemy->GetTransform(), enemy->GetBoundingVolume()));
 
-	character->GetPhysicsObject()->SetInverseMass(inverseMass);
-	character->GetPhysicsObject()->InitSphereInertia();
+	enemy->GetPhysicsObject()->SetInverseMass(inverseMass);
+	enemy->GetPhysicsObject()->InitSphereInertia();
 
-	world->AddGameObject(character);
+	world->AddGameObject(enemy);
+	stateObjects.emplace_back(enemy);
+	TutorialGame::enemy = enemy;
 
-	return character;
+	return enemy;
 }
 
 GameObject* TutorialGame::AddBonusToWorld(const Vector3& position, const Quaternion& rot) {
