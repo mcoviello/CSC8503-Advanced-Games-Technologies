@@ -28,6 +28,7 @@ TutorialGame::TutorialGame()	{
 	forceMagnitude	= 10.0f;
 	useGravity		= false;
 	inSelectionMode = false;
+	validSpawnPositions = {Vector3(80,5,80), Vector3(120,5,140), Vector3(40,5,140) };
 
 	Debug::SetRenderer(renderer);
 
@@ -96,38 +97,79 @@ void TutorialGame::UpdateGame(float dt) {
 		world->GetMainCamera()->UpdateCamera(dt);
 	}
 
+	for (int i = 0; i < collectables.size(); i++) {
+		if (!collectables[i]->IsActive()) {
+			world->RemoveGameObject(collectables[i]);
+			collectables.erase(collectables.begin() + i);
+		}
+	}
+
 
 	UpdateKeys();
 
 	if (player) {
 		Debug::Print("Score: " + std::to_string(player->GetScore()), Vector2(5, 10));
 		Debug::Print("Time: " + std::to_string((int)timer->GetTotalTimeSeconds()) + "s", Vector2(5, 15));
-		if (player->GoalReached()) {
-			won = true;
-			finishTime = timer->GetTotalTimeSeconds();
-			finishScore = player->GetScore();
+
+		switch (level) {
+		case 1:
+			//Win if player reaches goal
+			if (player->GoalReached()) {
+				won = true;
+				finishTime = timer->GetTotalTimeSeconds();
+				finishScore = player->GetScore();
+			}
+
+			//Lose if run out of time, or player killed
+			if (timer->GetTotalTimeSeconds() > 60) {
+				gameLost = true;
+				finishTime = timer->GetTotalTimeSeconds();
+				finishScore = player->GetScore();
+			}
+			break;
+		case 2:
+			//Win if player collects 3 or more coins
+			if (player->GetScore() >= 30) {
+				won = true;
+				finishTime = timer->GetTotalTimeSeconds();
+				finishScore = player->GetScore();
+			}
+			//Lose if touches enemy
+			else if (player->ISGameLost()) {
+				gameLost = true;
+				finishTime = timer->GetTotalTimeSeconds();
+				finishScore = player->GetScore();
+			}
+			break;
 		}
 
-		if (timer->GetTotalTimeSeconds() > 60) {
-			gameLost = true;
-		}
+			collectableInWorld = collectables.size() > 0 ? true : false;
 
 		if (enemy) {
+			if (coinSpawnTimer >= 10.0f) {
+				collectables.emplace_back(SpawnCoin());
+				coinSpawnTimer = 0;
+			}
+			else {
+				coinSpawnTimer += dt;
+			}
+
 			Vector3 enemyPos = enemy->GetTransform().GetPosition() + Vector3(0, 10, 0);
 			Ray ray = Ray(enemyPos, (player->GetTransform().GetPosition() - enemyPos).Normalised());
-			//Debug::DrawLine(enemy->GetTransform().GetPosition() + Vector3(0, 10, 0), enemy->GetTransform().GetPosition() + player->GetTransform().GetPosition() - enemy->GetTransform().GetPosition());
 			RayCollision closestCollision;
+
+			//If the enemy can see the player, chase it...
 			if (world->Raycast(ray, closestCollision, true)) {
-				std::cout << ((GameObject*)closestCollision.node)->GetWorldID();
 				if ((PlayerObj*)closestCollision.node == player) {
 					enemy->SetTarget(player);
 				}
+				//...Otherwise, go after the most recently spawned collectable
 				else {
-					enemy->SetTarget(nullptr);
+					enemy->SetTarget(collectableInWorld ? collectables.back() : enemy);
 				}
 			}
 			else {
-				enemy->SetTarget(nullptr);
+				enemy->SetTarget(collectableInWorld ? collectables.back() : enemy);
 			}
 
 			if (enemy->GetTarget() != nullptr) {
@@ -147,7 +189,7 @@ void TutorialGame::UpdateGame(float dt) {
 		}
 	}
 	SelectObject();
-	MoveSelectedObject();
+	//MoveSelectedObject();
 	physics->Update(dt);
 
 	for (auto i : stateObjects) {
@@ -212,12 +254,10 @@ void TutorialGame::Menu(int option, float dt) {
 void TutorialGame::ShowScore(bool won, float dt) {
 	Vector4 selectedCol = Vector4(1, 0.5, 0.5, 1);
 
-	Debug::Print(won ? "You Reached The Goal!" : "You Ran Out Of Time!", Vector2(30, 30));
+	Debug::Print(won ? "     You Won     !" : "    You Lost!     ", Vector2(30, 30));
 	Debug::Print("_____________________", Vector2(30, 35));
 	Debug::Print("Score: " + std::to_string(finishScore), Vector2(30, 40));
-	if (won) {
-		Debug::Print("Time Taken: " + std::to_string(finishTime), Vector2(30, 45));
-	}
+	Debug::Print("Time Taken: " + std::to_string((int)finishTime), Vector2(30, 45));
 	Debug::Print("Press [Esc] to return to the Main Menu", Vector2(12, 55));
 
 	Debug::FlushRenderables(dt);
@@ -275,6 +315,24 @@ void TutorialGame::UpdateKeys() {
 	}
 	else {
 		DebugObjectMovement();
+	}
+
+	if (controlBall && player) {
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::UP)) {
+			player->GetPhysicsObject()->AddForce(Vector3(100, 0, 0));
+		}
+
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::LEFT)) {
+			player->GetPhysicsObject()->AddForce(Vector3(0, 0, -100));
+		}
+
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::DOWN)) {
+			player->GetPhysicsObject()->AddForce(Vector3(-100, 0, 0));
+		}
+
+		if (Window::GetKeyboard()->KeyDown(KeyboardKeys::RIGHT)) {
+			player->GetPhysicsObject()->AddForce(Vector3(0, 0, 100));
+		}
 	}
 }
 
@@ -567,7 +625,11 @@ void TutorialGame::InitLevel1() {
 	ClearWorld();
 	finishScore = 0;
 	finishTime = 0;
-	enemy = nullptr;
+
+	won = false;
+	gameLost = false;
+	controlBall = false;
+	level = 1;
 
 	//Floor
 	AddFloorToWorld(Vector3(0, -3, 0), Vector3(20, 1, 20), Quaternion(1, 0, 0, 0), 0.7,Vector4(0.1,0.1,0.1,1));
@@ -605,6 +667,8 @@ void TutorialGame::InitLevel2() {
 
 	won = false;
 	gameLost = false;
+	controlBall = true;
+	level = 2;
 
 	AddFloorToWorld(Vector3(90, -4, 90), Vector3(90, 4, 90), Quaternion::EulerAnglesToQuaternion(0, 0, 0), 0.5f, Vector4(0.1,0.1,0.1,1));
 	AddFloorToWorld(Vector3(100, 0, 0), Vector3(100, 10, 10), Quaternion::EulerAnglesToQuaternion(0, 0, 0));
@@ -638,7 +702,7 @@ void TutorialGame::AddPusher(Vector3 pos, Vector3 pusherDims,  Quaternion rot, b
 }
 
 GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
-	float radius = 1.0f;
+	float radius = 3.0f;
 	PlayerObj* sphere = new PlayerObj();
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
@@ -667,7 +731,7 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
 	float meshSize		= 3.0f;
 	float inverseMass	= 0.5f;
 
-	Enemy* enemy = new Enemy(pathNodes);
+	Enemy* enemy = new Enemy(pathNodes, player);
 
 	SphereVolume* volume = new SphereVolume(3);
 	enemy->SetBoundingVolume((CollisionVolume*)volume);
@@ -847,6 +911,10 @@ void TutorialGame::PathFind(Vector3 from, Vector3 to) {
 		pathNodes.push_back(pos);
 
 	}
+}
+
+GameObject* TutorialGame::SpawnCoin() {
+	return AddBonusToWorld(validSpawnPositions[rand()%validSpawnPositions.size()], Quaternion(0,0,0,0));
 }
 
 void TutorialGame::DebugDisplayPath() {

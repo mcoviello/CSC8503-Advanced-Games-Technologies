@@ -42,7 +42,6 @@ namespace NCL {
 			void DebugDrawCapsule(CapsuleVolume* a, Transform* worldTransform);
 
 			void PathFind(Vector3 from, Vector3 to);
-
 			void DebugDisplayPath();
 
 			GameObject* AddFloorToWorld(const Vector3& position, const Vector3& dims, const Quaternion& rotation, float elasticity = 0.5f, Vector4 col = Vector4(1,1,1,1), string name = "Floor");
@@ -53,6 +52,7 @@ namespace NCL {
 			VerticalBlocker* AddVerticalBlockerToWorld(const Vector3& position, const Quaternion& rotation);
 			HorizontalBlocker* AddHorizontalBlockerToWorld(const Vector3& position);
 			Goal* AddGoal(const Vector3& position);
+			GameObject* SpawnCoin();
 
 			GameObject* AddCapsuleToWorld(const Vector3& position, float halfHeight, float radius, float inverseMass = 10.0f);
 
@@ -101,8 +101,16 @@ namespace NCL {
 
 			PlayerObj* player;
 			Enemy* enemy;
+			std::vector<Vector3> validSpawnPositions;
+			std::vector<GameObject*> collectables;
+			float coinSpawnTimer;
 
 			std::vector<Vector3> pathNodes;
+
+			bool controlBall;
+			bool collectableInWorld = false;
+
+			int level;
 
 		};
 	}

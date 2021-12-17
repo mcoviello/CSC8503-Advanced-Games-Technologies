@@ -17,6 +17,10 @@ namespace NCL {
 				if (otherObject->GetName() == "Goal") {
 					won = true;
 				}
+
+				if (otherObject->GetName() == "Enemy") {
+					lost = true;
+				}
 			}
 
 			void ResetScore() {
@@ -34,9 +38,14 @@ namespace NCL {
 			bool GoalReached() {
 				return won;
 			}
+
+			bool ISGameLost() {
+				return lost;
+			}
 		protected:
 			int score = 0;
 			bool won = false;
+			bool lost = false;
 		};
 	}
 }

@@ -2,23 +2,24 @@
 #include "StateTransition.h"
 #include "StateMachine.h"
 #include "State.h"
+#include "PlayerObj.h"
 
 using namespace NCL;
 using namespace CSC8503;
 
-Enemy::Enemy(std::vector<Vector3>& pathNodes) : pathNodes(pathNodes) {
-	counter = 1.0f;
+Enemy::Enemy(std::vector<Vector3>& pathNodes, PlayerObj* player) : pathNodes(pathNodes) {
+	name = "Enemy";
 	pathFindingTarget = nullptr;
 	stateMachine = new StateMachine();
 
 	State* stateA = new State([&](float dt)-> void
 		{
-			this->ChasePlayer(dt);
+			this->GoToTarget(dt);
 		}
 	);
 	State* stateB = new State([&](float dt)-> void
 		{
-			this->GoToPowerup(dt);
+			this->HoneIn(dt);
 		}
 	);
 
@@ -28,14 +29,16 @@ Enemy::Enemy(std::vector<Vector3>& pathNodes) : pathNodes(pathNodes) {
 	stateMachine->AddTransition(new StateTransition(stateA, stateB,
 		[&]()-> bool
 		{
-			return false;
+			//When the enemy has no idea where the player is, or there is a bonus around the stage
+		return Vector3::Distance(pathFindingTarget->GetTransform().GetPosition(), GetTransform().GetPosition()) < 20;
 		}
 	));
 
 	stateMachine->AddTransition(new StateTransition(stateB, stateA,
 		[&]()-> bool
 		{
-			return true;
+			//When the enemy spots the player
+			return Vector3::Distance(pathFindingTarget->GetTransform().GetPosition(), GetTransform().GetPosition()) >= 20;
 		}
 	));
 }
@@ -46,16 +49,16 @@ Enemy ::~Enemy() {
 
 void Enemy::Update(float dt) {
 	stateMachine->Update(dt);
+
 }
 
-void Enemy::ChasePlayer(float dt) {
-	if (pathNodes.size() == 0 || curNode >= pathNodes.size()) {
-		if (canSeePlayer && Vector3::Distance(GetTransform().GetPosition(), pathFindingTarget->GetTransform().GetPosition()) < 10) {
-			Vector3 force = (GetTransform().GetPosition() - pathFindingTarget->GetTransform().GetPosition()).Normalised() * moveSpeed * dt;
-			GetPhysicsObject()->AddForce(force);
-		}
+void Enemy::GoToTarget(float dt) {
+	//std::cout << "Walking to Target\n";
+	if (pathNodes.size() == 0 || curNode >= pathNodes.size()-1) {
 		return;
 	}
+
+	currentNodePos = pathNodes[curNode];
 
 	if (!(currentNodePos == pathNodes[curNode])) {
 		curNode = 0;
@@ -64,16 +67,15 @@ void Enemy::ChasePlayer(float dt) {
 
 	if (Vector3::Distance(this->GetTransform().GetPosition(), currentNodePos) < 15) {
 		curNode++;
-		currentNodePos = pathNodes[curNode];
 	}
 
 	Vector3 force = (currentNodePos - this->GetTransform().GetPosition()).Normalised() * moveSpeed * dt;
 
 	GetPhysicsObject()->AddForce(force);
-
-	counter += dt;
 }
 
-void Enemy::GoToPowerup(float dt) {
-	counter -= dt;
+void Enemy::HoneIn(float dt) {
+	//std::cout << "Close Chase\n";
+	Vector3 force = (pathFindingTarget->GetTransform().GetPosition() - GetTransform().GetPosition()).Normalised() * moveSpeed * dt;
+	GetPhysicsObject()->AddForce(force);
 }

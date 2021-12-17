@@ -3,18 +3,21 @@
 
 namespace NCL {
 	namespace CSC8503 {
+		class PlayerObj;
 		class Enemy : public StateGameObject {
 		public:
-			Enemy(std::vector<Vector3>& pathNodes);
+			Enemy(std::vector<Vector3>& pathNodes, PlayerObj* player);
 			virtual ~Enemy();
 			virtual void OnCollisionBegin(GameObject* otherObject) override {
-				if (otherObject->GetName() == "Player") {
-					
-				}
-
-				if (otherObject->GetName() == "Coin") {
+				//Allow for temporary movement boost
+				if (otherObject->GetName() == "SpeedPowerup") {
 					moveSpeed += 10.0f;
+					speedTimer = 0;
 				}
+			}
+
+			void SetCanSeePlayer(bool canSee) {
+				canSeePlayer = canSee;
 			}
 
 			GameObject* GetTarget() { return pathFindingTarget; }
@@ -23,14 +26,15 @@ namespace NCL {
 			virtual void Update(float dt) override;
 		protected:
 
-			void ChasePlayer(float dt);
-			void GoToPowerup(float dt);
+			void GoToTarget(float dt);
+			void HoneIn(float dt);
 
+			PlayerObj* player;
 			GameObject* pathFindingTarget;
 			bool canSeePlayer;
 
 			StateMachine* stateMachine;
-			float counter;
+			float speedTimer;
 
 			std::vector<Vector3>& pathNodes;
 			Vector3 currentNodePos;
