@@ -26,13 +26,15 @@ TutorialGame::TutorialGame()	{
 	physics		= new PhysicsSystem(*world);
 
 	forceMagnitude	= 10.0f;
-	useGravity		= false;
+	useGravity		= true;
 	inSelectionMode = false;
 	validSpawnPositions = {Vector3(80,5,80), Vector3(120,5,140), Vector3(40,5,140) };
 
 	Debug::SetRenderer(renderer);
 
 	InitialiseAssets();
+
+	physics->UseGravity(useGravity);
 }
 
 /*
@@ -646,7 +648,7 @@ void TutorialGame::InitLevel1() {
 
 	//Blockers
 	AddVerticalBlockerToWorld(Vector3(9, -15, 35), Quaternion::EulerAnglesToQuaternion(0,0,90));
-	AddHorizontalBlockerToWorld(Vector3(20, 1, 13));
+	AddHorizontalBlockerToWorld(Vector3(15, 1, 13));
 
 	//Coins
 	AddBonusToWorld(Vector3(30, -2, 0), Quaternion::EulerAnglesToQuaternion(0,90,0));

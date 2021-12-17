@@ -325,7 +325,7 @@ void PhysicsSystem::NarrowPhase() {
 			//std::cout << "Collision between " << i->a->GetName() << " and " << i->b->GetName() << std::endl;
 			info.framesLeft = numCollisionFrames;
 			//Dont resolve collisions if one object is on collectable layer
-			if (!(i->a->GetLayer() & collisionMask) && !(i->b->GetLayer() & collisionMask)) {
+			if (!(i->a->GetLayer() & collisionMask) || !(i->b->GetLayer() & collisionMask)) {
 				ImpulseResolveCollision(*info.a, *info.b, info.point);
 			}
 			allCollisions.insert(info);
